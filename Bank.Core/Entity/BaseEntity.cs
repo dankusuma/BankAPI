@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Bank.Core.Model
 {
-    public class BaseModel
+    public class BaseEntity
     {
         public int id { get; set; }
     }

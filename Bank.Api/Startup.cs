@@ -14,6 +14,9 @@ using System.Threading.Tasks;
 using Bank.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Bank.Core.Interface;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace Bank.Api
 {
@@ -32,10 +35,55 @@ namespace Bank.Api
             services.AddDbContext<BankDbContext>(options =>
             options.UseNpgsql(Configuration.GetConnectionString("MainDBConnection")));
             services.AddScoped<IRepository, BankRepository>();
+            
             services.AddControllers();
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+
+            // Adding Jwt Bearer  
+            .AddJwtBearer(options =>
+            {
+                options.RequireHttpsMetadata = false;
+                options.TokenValidationParameters = new TokenValidationParameters()
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidAudience = Configuration["JWT:Audience"],
+                    ValidIssuer = Configuration["JWT:Issuer"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JWT:Secret"]))
+                };
+            });
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Bank.Api", Version = "v1" });
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Enter 'Bearer' [space] and then your valid token in the text input below.\r\n\r\nExample: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\"",
+                });
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                          new OpenApiSecurityScheme
+                            {
+                                Reference = new OpenApiReference
+                                {
+                                    Type = ReferenceType.SecurityScheme,
+                                    Id = "Bearer"
+                                }
+                            },
+                            new string[] {}
+
+                    }
+                });
             });
         }
 
@@ -53,6 +101,7 @@ namespace Bank.Api
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
