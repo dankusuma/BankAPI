@@ -1,4 +1,5 @@
-﻿using Bank.Core;
+﻿using Bank.Api.ActionFilter;
+using Bank.Core;
 using Bank.Core.Interface;
 using Bank.Core.Model;
 using Microsoft.AspNetCore.Authorization;
@@ -40,7 +41,9 @@ namespace Bank.Api.Controllers
             return Ok();
         }
 
+        
         [Authorize]
+        [ServiceFilter(typeof(AdminAccessOnly))]
         [HttpGet]
         public IActionResult Get()
         {

@@ -17,6 +17,7 @@ using Bank.Core.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Bank.Api.ActionFilter;
 
 namespace Bank.Api
 {
@@ -35,8 +36,11 @@ namespace Bank.Api
             services.AddDbContext<BankDbContext>(options =>
             options.UseNpgsql(Configuration.GetConnectionString("MainDBConnection")));
             services.AddScoped<IRepository, BankRepository>();
-            
+
+            services.AddScoped<AdminAccessOnly>();
+
             services.AddControllers();
+
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
