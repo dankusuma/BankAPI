@@ -1,4 +1,4 @@
-﻿using Bank.Core.Model;
+﻿using Bank.Core.Entity;
 using System;
 using System.Collections.Generic;
 using System.Linq;

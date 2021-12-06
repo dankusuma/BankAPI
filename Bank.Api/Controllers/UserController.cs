@@ -1,7 +1,7 @@
 ﻿using Bank.Api.ActionFilter;
 using Bank.Core;
+using Bank.Core.Entity;
 using Bank.Core.Interface;
-using Bank.Core.Model;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -64,7 +64,7 @@ namespace Bank.Api.Controllers
                 return Unauthorized();
             }
 
-            claims.Add(new Claim(ClaimTypes.Role,user.role_id.ToString()));
+            claims.Add(new Claim(ClaimTypes.Role,user.master_code.ToString()));
             claims.Add(new Claim(ClaimTypes.Name, user.username));
 
 

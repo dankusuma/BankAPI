@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Bank.Core.Entity;
 using Bank.Core.Interface;
-using Bank.Core.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bank.Infrastructure.Data

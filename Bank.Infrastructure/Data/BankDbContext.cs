@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Bank.Core.Model;
+using Bank.Core.Entity;
 
 namespace Bank.Infrastructure.Data
 {
@@ -17,6 +17,7 @@ namespace Bank.Infrastructure.Data
         }
 
         public DbSet<User> Users { get; set; }
+        public DbSet<RoleType> RoleTypes { get; set; }
 
     }
 }

@@ -6,8 +6,14 @@ using System.Threading.Tasks;
 
 namespace Bank.Core.Entity
 {
-    public class BaseEntity
+    public class RoleType : BaseEntity
     {
-        public int id { get; set; }
+        public string role { get; set; }
+        public string description { get; set; }
     }
+
+
+
+
+
 }

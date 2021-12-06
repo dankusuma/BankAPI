@@ -8,6 +8,6 @@ namespace Bank.Core.Enum
 {
     public enum AccessLevels
     {
-        Admin = 0,
+        Admin = 1,
     }
 }
