@@ -3,15 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bank.Infrastructure", "Bank.Infrastructure\Bank.Infrastructure.csproj", "{679E94DD-E667-4121-A388-5D47F0221E51}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bank.Infrastructure", "Bank.Infrastructure\Bank.Infrastructure.csproj", "{679E94DD-E667-4121-A388-5D47F0221E51}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bank.Core", "Bank.Core\Bank.Core.csproj", "{FD38C611-CE89-4A0C-B728-D4798852A5BB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bank.Core", "Bank.Core\Bank.Core.csproj", "{FD38C611-CE89-4A0C-B728-D4798852A5BB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source", "Source", "{B8505F9F-C9B0-4B73-AD80-9E0C8190DD41}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{8F39B40E-CB7E-41CF-ADC3-20C55D67D1D1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bank.Api", "Bank.Api\Bank.Api.csproj", "{34F23706-3567-4CFE-8249-B23F3F8C3856}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bank.Api", "Bank.Api\Bank.Api.csproj", "{34F23706-3567-4CFE-8249-B23F3F8C3856}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTest", "UnitTest\UnitTest.csproj", "{0C94EC90-40AC-47C5-8383-085DC1C82C63}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +33,10 @@ Global
 		{34F23706-3567-4CFE-8249-B23F3F8C3856}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{34F23706-3567-4CFE-8249-B23F3F8C3856}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{34F23706-3567-4CFE-8249-B23F3F8C3856}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C94EC90-40AC-47C5-8383-085DC1C82C63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C94EC90-40AC-47C5-8383-085DC1C82C63}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C94EC90-40AC-47C5-8383-085DC1C82C63}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C94EC90-40AC-47C5-8383-085DC1C82C63}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -39,6 +45,7 @@ Global
 		{679E94DD-E667-4121-A388-5D47F0221E51} = {B8505F9F-C9B0-4B73-AD80-9E0C8190DD41}
 		{FD38C611-CE89-4A0C-B728-D4798852A5BB} = {B8505F9F-C9B0-4B73-AD80-9E0C8190DD41}
 		{34F23706-3567-4CFE-8249-B23F3F8C3856} = {B8505F9F-C9B0-4B73-AD80-9E0C8190DD41}
+		{0C94EC90-40AC-47C5-8383-085DC1C82C63} = {8F39B40E-CB7E-41CF-ADC3-20C55D67D1D1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6E400F51-76E6-455F-99A1-41551AB9201E}
