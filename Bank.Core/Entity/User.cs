@@ -21,7 +21,6 @@ namespace Bank.Core.Entity
         public bool is_validate { get; set; }
         public void HashPassword()
         {
-
             var sha1 = System.Security.Cryptography.SHA1.Create();
             var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(password));
             password = string.Concat(hash.Select(b => b.ToString("x2")));
