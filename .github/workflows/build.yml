@@ -2,7 +2,7 @@ name: Build
 on:
   push:
     branches:
-      - ${GITHUB_REF##*/} # or the name of your main branch
+      - development # or the name of your main branch
 
 jobs:
   build:
