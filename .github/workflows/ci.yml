@@ -22,4 +22,4 @@ jobs:
           remote: ${{ secrets.REMOTE_TARGET }}
           host: ${{ secrets.REMOTE_HOST }}
           username: ${{ secrets.SSH_USER }}
-          privateKey: ${{ secrets.PASSWORD }}
+          password: ${{ secrets.PASSWORD }}
