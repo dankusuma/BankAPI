@@ -1,0 +1,32 @@
+name: .NET 5 CI
+on:
+  push:
+    branches:
+      - development # or the name of your main branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: .NET 5 Application
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.101' # Check for latest at link at .NET 5 download page
+      - run: dotnet publish Bank.Api -c Release -o deploy
+      - name: Copy via ssh
+        uses: garygrossgarten/github-action-scp@v0.5.3
+        with:
+          local: /home/runner/work/BankAPI/BankAPI/deploy/
+          remote: ${{ secrets.REMOTE_TARGET }}
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.PASSWORD }}
+      - name: Run SSH command
+        uses: garygrossgarten/github-action-ssh@v0.3.0
+        with:
+          command: sudo systemctl restart Api.service
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.PASSWORD }}
