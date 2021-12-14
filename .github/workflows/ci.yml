@@ -14,7 +14,7 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '5.0.101' # Check for latest at link at .NET 5 download page
-      - run: dotnet publish src -c Release -o deploy
+      - run: dotnet publish Bank.Api -c Release -o deploy
       - name: Copy via ssh
         uses: garygrossgarten/github-action-scp@v0.5.3
         with:
