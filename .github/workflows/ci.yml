@@ -28,5 +28,5 @@ jobs:
         with:
           command: sudo systemctl restart Api.service
           host: ${{ secrets.REMOTE_HOST }}
-          username: ${{ secrets.REMOTE_USER }}
-          password: ${{ secrets.REMOTE_SSH_KEY }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.PASSWORD }}
