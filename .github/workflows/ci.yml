@@ -2,7 +2,7 @@ name: .NET 5 CI
 on:
   push:
     branches:
-      - development # or the name of your main branch
+      - feature/continous_integration # or the name of your main branch
 
 jobs:
   build:
