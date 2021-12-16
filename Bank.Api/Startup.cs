@@ -42,6 +42,7 @@ namespace Bank.Api
             services.AddScoped<IRepository, BankRepository>();
 
             services.AddScoped<AdminAccessOnly>();
+            services.AddScoped<AwsCredential>();
 
             services.Configure<ForwardedHeadersOptions>(options =>
             {
