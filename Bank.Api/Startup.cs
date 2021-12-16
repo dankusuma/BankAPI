@@ -20,6 +20,8 @@ using System.Text;
 using Bank.Api.ActionFilter;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Net;
+using Amazon.S3;
+using Bank.Infrastructure.AWS;
 
 namespace Bank.Api
 {
@@ -41,6 +43,9 @@ namespace Bank.Api
             services.AddScoped<IRepository, BankRepository>();
 
             services.AddScoped<AdminAccessOnly>();
+            services.AddDefaultAWSOptions(Configuration.GetAWSOptions());
+            services.AddAWSService<IAmazonS3>();
+            services.AddScoped<S3>();
 
             services.Configure<ForwardedHeadersOptions>(options =>
             {
