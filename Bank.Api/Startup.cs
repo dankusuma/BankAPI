@@ -20,7 +20,6 @@ using System.Text;
 using Bank.Api.ActionFilter;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Net;
-using Bank.Core.Models;
 
 namespace Bank.Api
 {
@@ -98,7 +97,6 @@ namespace Bank.Api
                     }
                 });
             });
-            services.Configure<AwsOptions>(Configuration.GetSection("AWS"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
