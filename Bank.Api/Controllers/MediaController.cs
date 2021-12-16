@@ -1,4 +1,5 @@
 ﻿using Bank.Infrastructure.AWS;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.IO;
 using System.Net.Mime;
@@ -49,5 +50,14 @@ namespace Bank.Api.Controllers
 
             return File(videoStream, "video/webm");
         }
+
+
+        [HttpPost]
+        public async Task<IActionResult> Upload(IFormFile content)
+        {
+            string fileid = await _S3.UploadObjectFromContentAsync(content);
+            return Ok();
+        }
+
     }
 }

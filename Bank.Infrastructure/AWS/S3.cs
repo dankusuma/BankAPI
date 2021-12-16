@@ -1,5 +1,7 @@
 ﻿using Amazon.S3;
 using Amazon.S3.Model;
+using Amazon.S3.Transfer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -49,6 +51,27 @@ namespace Bank.Infrastructure.AWS
             catch (AmazonS3Exception e)
             {
                 throw new Exception("Read object operation failed.", e);
+            }
+        }
+
+        public async Task<string> UploadObjectFromContentAsync(
+           IFormFile content)
+        {
+            string id = Guid.NewGuid().ToString();
+            using (var newMemoryStream = new MemoryStream())
+            {
+                content.CopyTo(newMemoryStream);
+
+                var uploadRequest = new TransferUtilityUploadRequest
+                {
+                    InputStream = newMemoryStream,
+                    Key = id,
+                    BucketName = bucketName,
+                };
+
+                var fileTransferUtility = new TransferUtility(client);
+                await fileTransferUtility.UploadAsync(uploadRequest);
+                return id;
             }
         }
 
