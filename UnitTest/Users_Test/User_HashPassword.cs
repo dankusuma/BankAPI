@@ -12,7 +12,7 @@ namespace UnitTest.Users_Test
         public void SetUp()
         {
             user = new User();
-            user.password = "admin";
+            user.PASSWORD = "admin";
             
         }
         [Test]
@@ -20,7 +20,7 @@ namespace UnitTest.Users_Test
         {
             //test Linter
             user.HashPassword();
-            Assert.AreEqual(user.password, "d033e22ae348aeb5660fc2140aec35850c4da997");
+            Assert.AreEqual(user.PASSWORD, "d033e22ae348aeb5660fc2140aec35850c4da997");
         }
     }
 }
