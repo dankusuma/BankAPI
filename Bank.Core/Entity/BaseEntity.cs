@@ -8,6 +8,6 @@ namespace Bank.Core.Entity
 {
     public class BaseEntity
     {
-        public int id { get; set; }
+        public int ID { get; set; }
     }
 }
