@@ -21,7 +21,7 @@ namespace Bank.Api.Controllers
     {
         private readonly IRepository _repository;
         private readonly IConfiguration _configuration;
-        public UserController(IRepository repository,IConfiguration configuration)
+        public UserController(IRepository repository, IConfiguration configuration)
         {
             _repository = repository;
             _configuration = configuration;
@@ -31,7 +31,7 @@ namespace Bank.Api.Controllers
         [HttpPost]
         public IActionResult Add(User user)
         {
-            if (_repository.List<User>().Exists(x => x.username == user.username))
+            if (_repository.List<User>().Exists(x => x.USERNAME == user.USERNAME))
             {
                 return BadRequest();
             }
@@ -47,9 +47,9 @@ namespace Bank.Api.Controllers
             return Ok();
         }
 
-        
-        [Authorize]
-        [ServiceFilter(typeof(AdminAccessOnly))]
+
+        //[Authorize]
+        //[ServiceFilter(typeof(AdminAccessOnly))]
         [HttpGet]
         public IActionResult Get()
         {
@@ -61,17 +61,17 @@ namespace Bank.Api.Controllers
         [HttpPost]
         public IActionResult Authenticate(LoginModel login)
         {
-            var user = _repository.List<User>().Find(x => x.username == login.UserName);
+            var user = _repository.List<User>().Find(x => x.USERNAME == login.USERNAME);
 
             var claims = new List<Claim>();
 
-            if (user == null || !user.VerifyPassword(login.Password))
+            if (user == null || !user.VerifyPassword(login.PASSWORD))
             {
                 return Unauthorized();
             }
 
-            claims.Add(new Claim(ClaimTypes.Role,user.master_code.ToString()));
-            claims.Add(new Claim(ClaimTypes.Name, user.username));
+            claims.Add(new Claim(ClaimTypes.Role, user.USER_TYPE.ToString()));
+            claims.Add(new Claim(ClaimTypes.Name, user.USERNAME));
 
 
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
@@ -84,7 +84,7 @@ namespace Bank.Api.Controllers
                 signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
                 );
 
-            
+
             return Ok(new JwtSecurityTokenHandler().WriteToken(token));
         }
 

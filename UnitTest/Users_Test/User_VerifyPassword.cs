@@ -12,7 +12,7 @@ namespace UnitTest.Users_Test
         public void SetUp()
         {
             user = new User();
-            user.password = "d033e22ae348aeb5660fc2140aec35850c4da997";
+            user.PASSWORD = "d033e22ae348aeb5660fc2140aec35850c4da997";
         }
 
         [Test]
