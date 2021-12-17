@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Internal;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -13,16 +12,11 @@ namespace Bank.Core.Entity
 
         string folderLocation = @"D:\Quiz\.Net Bootcamp\Self Exercise\TestingUpload\TestingUpload\upload\photo";
 
-        public IFormFile uploadedPhoto { get; set; }
-        public IFormFile uploadedVideo { get; set; }
+        IFormFile uploadedPhoto { get; set; }
+        IFormFile uploadedVideo { get; set; }
 
         public string stringPhoto { get; set; }
         public string stringVideo { get; set; }
-
-        public Upload(string photoName, string videoName) {
-            this.photoName = photoName;
-            this.videoName = videoName;
-        }
 
         public void convertToString() {
             using (MemoryStream ms = new MemoryStream()) {
