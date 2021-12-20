@@ -7,10 +7,10 @@ namespace Bank.Core.Entity
 {
     public class Upload
     {
-        string photoName { get; set; }
-        string videoName { get; set; }
+        public string photoName { get; set; }
+        public string videoName { get; set; }
 
-        string folderLocation = @"D:\Quiz\.Net Bootcamp\Self Exercise\TestingUpload\TestingUpload\upload\photo";
+        string folderLocation = @"D:\";
 
         IFormFile uploadedPhoto { get; set; }
         IFormFile uploadedVideo { get; set; }
@@ -18,8 +18,11 @@ namespace Bank.Core.Entity
         public string stringPhoto { get; set; }
         public string stringVideo { get; set; }
 
-        public void convertToString() {
-            using (MemoryStream ms = new MemoryStream()) {
+        public string status { get; set; }
+        public void convertToString()
+        {
+            using (MemoryStream ms = new MemoryStream())
+            {
                 uploadedPhoto.CopyTo(ms);
                 byte[] fileBytes = ms.ToArray();
                 stringPhoto = Convert.ToBase64String(fileBytes);
@@ -37,48 +40,67 @@ namespace Bank.Core.Entity
         {
             byte[] photoBytes = Convert.FromBase64String(stringPhoto);
             MemoryStream msPhoto = new MemoryStream(photoBytes);
-            uploadedPhoto = new FormFile(msPhoto, 0, photoBytes.Length,photoName,photoName);
-            msPhoto.Close();
+            uploadedPhoto = new FormFile(msPhoto, 0, photoBytes.Length, photoName, photoName);
+
 
             byte[] videoBytes = Convert.FromBase64String(stringVideo);
             MemoryStream msVideo = new MemoryStream(videoBytes);
             uploadedVideo = new FormFile(msVideo, 0, videoBytes.Length, videoName, videoName);
-            msVideo.Close();
-            
+
+
         }
 
-        public void doUpload() {
-            doUploadFoto();
-            doUploadVideo();
-        }
-        public void doUploadFoto() {
-            if (uploadedPhoto == null || uploadedPhoto.Length == 0)
-            {
-                return;
-            }
-            
-            string fileName = uploadedPhoto.FileName;
-            string targetFileName = folderLocation + photoName;
-            using (var stream = new FileStream(targetFileName, FileMode.Create))
-            {
-                uploadedPhoto.CopyTo(stream);
-            }
-        }
-
-        public void doUploadVideo()
+        public void doUpload()
         {
-            if (uploadedVideo == null || uploadedVideo.Length == 0)
+            try
             {
-                return;
+                status = doUpload(uploadedPhoto, new[] { ".jpg", ".png", ".bmp" }, photoName);
+                status = doUpload(uploadedVideo, new[] { ".mp4", ".avi", ".mpg" }, videoName);
+            }
+            catch (Exception e)
+            {
+                status = e.Message;
+            }
+        }
+        public string doUpload(IFormFile a, string[] b, string c)
+        {
+            if (a == null || a.Length == 0)
+            {
+                return "Foto kosong!";
+            }
+            else if (!contains(c, b))
+            {
+                return "Invalid Format for : " + photoName;
+            }
+            else if (a.Length > 10000000)
+            {
+                return "File Kebesaran";
             }
 
-            string fileName = uploadedVideo.FileName;
-            string targetFileName = folderLocation + videoName;
-            using (var stream = new FileStream(targetFileName, FileMode.Create))
+            else
             {
-                uploadedVideo.CopyTo(stream);
+                string fileName = a.FileName;
+                string targetFileName = folderLocation + c;
+                FileStream stream = new FileStream(targetFileName, FileMode.Create);
+                a.CopyTo(stream);
+                stream.Close();
+                return "Success!";
             }
+        }
+
+        public bool contains(string a, string[] b)
+        {
+            for (int i = 0; i < b.Length; i++)
+            {
+                if (a.Contains(b[i]))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
     }
+
 }
+
