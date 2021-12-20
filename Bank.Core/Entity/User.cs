@@ -1,60 +1,106 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Microsoft.AspNetCore.Http;
+using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Bank.Core.Entity
 {
-    public class User : BaseEntity
+    public class Upload
     {
-        public string USERNAME { get; set; } //
-        public string PASSWORD { get; set; } //
-        public string PIN { get; set; }
-        public string NAME { get; set; } //
-        public string ADDRESS { get; set; } //
-        public string PHONE { get; set; } //
-        public string FOTO_KTP_SELFIE { get; set; }
-        public string VIDEO { get; set; }
-        public bool IS_VALIDATE { get; set; }
-        public DateTime LOGIN_HOLD { get; set; }
-        public int LOGIN_FAILED { get; set; }
-        public string USER_TYPE { get; set; }
-        public string BIRTH_PLACE { get; set; } //
-        public string MOTHER_MAIDEN_NAME { get; set; } //
-        public string KELURAHAN { get; set; } //
-        public string KABUPATEN_KOTA { get; set; } //
-        public char GENDER { get; set; } //
-        public string JOB { get; set; } //
-        public string BIRTH_DATE { get; set; } //
-        public string KECAMATAN { get; set; } //
-        public string PROVINCE { get; set; } //
-        public string MARITAL_STATUS { get; set; } //
-        public string EMAIL { get; set; } //
-        public string NIK { get; set; } //
+        public string photoName { get; set; }
+        public string videoName { get; set; }
 
-        public void HashPassword()
+        string folderLocation = @"D:\";
+
+        IFormFile uploadedPhoto { get; set; }
+        IFormFile uploadedVideo { get; set; }
+
+        public string stringPhoto { get; set; }
+        public string stringVideo { get; set; }
+
+        public string status { get; set; }
+        public void convertToString()
         {
-            var sha1 = System.Security.Cryptography.SHA1.Create();
-            var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(PASSWORD));
-            PASSWORD = string.Concat(hash.Select(b => b.ToString("x2")));
+            using (MemoryStream ms = new MemoryStream())
+            {
+                uploadedPhoto.CopyTo(ms);
+                byte[] fileBytes = ms.ToArray();
+                stringPhoto = Convert.ToBase64String(fileBytes);
+            }
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                uploadedVideo.CopyTo(ms);
+                byte[] fileBytes = ms.ToArray();
+                stringVideo = Convert.ToBase64String(fileBytes);
+            }
+        }
+
+        public void convertToFile()
+        {
+            byte[] photoBytes = Convert.FromBase64String(stringPhoto);
+            MemoryStream msPhoto = new MemoryStream(photoBytes);
+            uploadedPhoto = new FormFile(msPhoto, 0, photoBytes.Length, photoName, photoName);
+
+
+            byte[] videoBytes = Convert.FromBase64String(stringVideo);
+            MemoryStream msVideo = new MemoryStream(videoBytes);
+            uploadedVideo = new FormFile(msVideo, 0, videoBytes.Length, videoName, videoName);
+
 
         }
 
-        public bool VerifyPassword(string _password)
+        public void doUpload()
         {
-            bool result = false;
-            var sha1 = System.Security.Cryptography.SHA1.Create();
-            var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(_password));
-            _password = string.Concat(hash.Select(b => b.ToString("x2")));
-            if (_password == PASSWORD)
+            try
             {
-                result = true;
+                status = doUpload(uploadedPhoto, new[] { ".jpg", ".png", ".bmp" }, photoName);
+                status = doUpload(uploadedVideo, new[] { ".mp4", ".avi", ".mpg" }, videoName);
+            }
+            catch (Exception e)
+            {
+                status = e.Message;
+            }
+        }
+        public string doUpload(IFormFile a, string[] b, string c)
+        {
+            if (a == null || a.Length == 0)
+            {
+                return "Foto kosong!";
+            }
+            else if (!contains(c, b))
+            {
+                return "Invalid Format for : " + photoName;
+            }
+            else if (a.Length > 10000000)
+            {
+                return "File Kebesaran";
             }
 
-            return result;
+            else
+            {
+                string fileName = a.FileName;
+                string targetFileName = folderLocation + c;
+                FileStream stream = new FileStream(targetFileName, FileMode.Create);
+                a.CopyTo(stream);
+                stream.Close();
+                return "Success!";
+            }
+        }
 
+        public bool contains(string a, string[] b)
+        {
+            for (int i = 0; i < b.Length; i++)
+            {
+                if (a.Contains(b[i]))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
     }
+
 }
+
