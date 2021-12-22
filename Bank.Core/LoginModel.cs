@@ -8,7 +8,8 @@ namespace Bank.Core
 {
     public class LoginModel
     {
-        public string USERNAME { get; set;}
-        public string PASSWORD { get; set;}
+        public string USERNAME { get; set; }
+        public string PASSWORD { get; set; }
+        public string NEWPASSWORD { get; set; }
     }
 }
