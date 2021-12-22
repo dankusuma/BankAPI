@@ -54,49 +54,35 @@ namespace Bank.Core.Entity
         {
             try
             {
-                string statusFoto = doUpload(uploadedPhoto, new[] { ".jpg", ".png", ".bmp" }, photoName);
-                string statusVideo = doUpload(uploadedVideo, new[] { ".mp4", ".avi", ".mpg" }, videoName);
-                if (statusFoto != "Success!")
-                {
-                    status = statusFoto;
-                    return;
-                }
-                else if (statusVideo != "Success!")
-                {
-                    status = statusVideo;
-                    return;
-                }
-                else
-                {
-                    status = "Success!";
-                }
+                status = doUpload(uploadedPhoto, new[] { ".jpg", ".png", ".bmp" }, photoName);
+                status = doUpload(uploadedVideo, new[] { ".mp4", ".avi", ".mpg" }, videoName);
             }
             catch (Exception e)
             {
                 status = e.Message;
             }
         }
-        public string doUpload(IFormFile file, string[] listFormat, string namaFile)
+        public string doUpload(IFormFile a, string[] b, string c)
         {
-            if (file == null || file.Length == 0)
+            if (a == null || a.Length == 0)
             {
                 return "Foto kosong!";
             }
-            else if (!contains(namaFile, listFormat))
+            else if (!contains(c, b))
             {
-                return "Invalid Format for : " + namaFile;
+                return "Invalid Format for : " + photoName;
             }
-            else if (file.Length > 10000000)
+            else if (a.Length > 10000000)
             {
                 return "File Kebesaran";
             }
 
             else
             {
-                string fileName = file.FileName;
-                string targetFileName = folderLocation + namaFile;
+                string fileName = a.FileName;
+                string targetFileName = folderLocation + c;
                 FileStream stream = new FileStream(targetFileName, FileMode.Create);
-                file.CopyTo(stream);
+                a.CopyTo(stream);
                 stream.Close();
                 return "Success!";
             }
