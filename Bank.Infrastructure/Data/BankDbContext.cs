@@ -17,7 +17,10 @@ namespace Bank.Infrastructure.Data
         }
 
         public DbSet<User> USER { get; set; }
+
         public DbSet<RoleType> RoleTypes { get; set; }
+
+        public DbSet<RefMaster> REF_MASTER { get; set; }
 
     }
 }
