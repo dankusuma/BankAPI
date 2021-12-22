@@ -10,8 +10,6 @@ using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net;
-using System.Net.Mail;
 using System.Security.Claims;
 using System.Text;
 
@@ -29,17 +27,47 @@ namespace Bank.Api.Controllers
             _configuration = configuration;
         }
 
+
         [HttpPost]
         public IActionResult Add(User user)
         {
-            if (_repository.List<User>().Exists(x => x.USERNAME == user.USERNAME))
+            string validation = user.dataValidation();
+            if (validation.Equals("Success"))
             {
-                return BadRequest();
+                if (_repository.List<User>().Exists(x => x.USERNAME == user.USERNAME))
+                {
+                    return BadRequest();
+                }
+
+                user.HashPassword();
+                user.HashPin();
+                _repository.Add(user);
+                return Ok("Success");
+            }
+            else
+            {
+                return Ok("Error400");
             }
 
-            user.HashPassword();
-            _repository.Add(user);
-            return Ok();
+        }
+        [HttpPost]
+        public IActionResult isUserDuplicate(string username)
+        {
+            if (_repository.List<User>().Exists(x => x.USERNAME == username))
+            {
+                return Ok("Duplicate Username");
+            }
+            return Ok("Success");
+        }
+
+        [HttpPost]
+        public IActionResult isEmailDuplicate(string email)
+        {
+            if (_repository.List<User>().Exists(x => x.EMAIL == email))
+            {
+                return Ok("Duplicate Email");
+            }
+            return Ok("Success");
         }
 
         [HttpPost]
@@ -50,112 +78,46 @@ namespace Bank.Api.Controllers
             return Ok(upload.status);
         }
 
-        [Authorize]
-        [ServiceFilter(typeof(AdminAccessOnly))]
+        //[Authorize]
+        //[ServiceFilter(typeof(AdminAccessOnly))]
         [HttpGet]
         public IActionResult Get()
         {
-            List<User> users = _repository.List<User>();
+            List<User> users = new List<User>();
+            users = _repository.List<User>();
             return Ok(users);
-        }
-
-        private JwtSecurityToken JwtSecurityTokenGenerator(List<Claim> claims)
-        {
-            var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
-
-            return new JwtSecurityToken(
-                        issuer: _configuration["JWT:Issuer"],
-                        audience: _configuration["JWT:Audience"],
-                        expires: DateTime.Now.AddMinutes(15),
-                        claims: claims,
-                        signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
-                        );
-        }
-
-        private string Validation(String mode, User user, LoginModel login)
-        {
-            /// Maximum failed login attempt
-            int maxFailed = 3;
-            int suspendedHours = 24;
-
-            if (mode == "login")
-            {
-                /// If login on suspend
-                if (user.LOGIN_HOLD > DateTime.Now)
-                    return string.Format("Your account are suspend for {0} hour(s)", suspendedHours);
-
-                /// If user is null OR wrong password
-                if (user == null || !user.VerifyPassword(login.PASSWORD))
-                {
-                    /// Set Increment by 1 for LOGIN_FAILED field
-                    user.LOGIN_FAILED = user.LOGIN_FAILED + 1;
-
-                    /// If failed attempt > max failed
-                    if (user.LOGIN_FAILED >= maxFailed)
-                    {
-                        /// Set LOGIN_HOLD to DateTime.Now + 1 Hour
-                        user.LOGIN_HOLD = DateTime.Now.AddHours(1);
-                        /// Update user
-                        _repository.Update(user);
-                        return string.Format("Max login attempt exceeded! Account will suspended for {0} hour(s)", suspendedHours);
-                    }
-                    else
-                    {
-                        /// Update user
-                        _repository.Update(user);
-                        return "Username / Password invalid!";
-                    }
-                }
-
-                /// Once login success, reset Login Attempt to 0 
-                user.LOGIN_FAILED = 0;
-                /// Update user
-                _repository.Update(user);
-            }
-
-            if (mode == "change_password")
-            {
-                if (user == null) return "Username not recognized";
-
-                if (login.PASSWORD == login.NEWPASSWORD) return "Can't use the same password as the old password";
-            }
-
-            return "";
         }
 
         [HttpPost]
         public IActionResult Authenticate(LoginModel login)
         {
-            JwtSecurityToken token = null;
+            var user = _repository.List<User>().Find(x => x.USERNAME == login.USERNAME);
+
             var claims = new List<Claim>();
 
-            string validationMessage = "";
-
-            try
+            if (user == null || !user.VerifyPassword(login.PASSWORD))
             {
-                var user = _repository.List<User>().Find(x => x.USERNAME == login.USERNAME);
-
-                /// Validation function
-                validationMessage = Validation("login", user, login);
-
-                if (validationMessage == "")
-                {
-                    claims.Add(new Claim(ClaimTypes.Role, user.USER_TYPE.ToString()));
-                    claims.Add(new Claim(ClaimTypes.Name, user.USERNAME));
-
-                    token = JwtSecurityTokenGenerator(claims);
-
-                    return Ok(new JwtSecurityTokenHandler().WriteToken(token));
-                }
-                else
-                {
-                    return Unauthorized(validationMessage);
-                }
+                return Unauthorized();
             }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message.ToString());
-            }
+
+            claims.Add(new Claim(ClaimTypes.Role, user.USER_TYPE.ToString()));
+            claims.Add(new Claim(ClaimTypes.Name, user.USERNAME));
+
+
+            var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["JWT:Issuer"],
+                audience: _configuration["JWT:Audience"],
+                expires: DateTime.Now.AddMinutes(15),
+                claims: claims,
+                signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
+                );
+
+
+            return Ok(new JwtSecurityTokenHandler().WriteToken(token));
         }
+
+
     }
 }
