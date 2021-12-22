@@ -72,17 +72,29 @@ namespace Bank.Api.Controllers
                         );
         }
 
-        private string Validation(String mode, User user, LoginModel login)
+        [HttpPost]
+        public IActionResult Authenticate(LoginModel login)
         {
-            /// Maximum failed login attempt
-            int maxFailed = 3;
-            int suspendedHours = 24;
+            JwtSecurityToken token = null;
+            var claims = new List<Claim>();
 
-            if (mode == "login")
+            string validationMessage = "";
+
+            try
             {
+                /// Get setting
+                var setting = _repository.List<RefMaster>().FindAll(x => x.MASTER_GROUP == "SETTING");
+                /// Get user list
+                var user = _repository.List<User>().Find(x => x.USERNAME == login.USERNAME);
+
+                /// Maximum failed login attempt
+                int maxFailed = int.Parse(setting.Find(x => x.MASTER_CODE == "MAX_LOGIN").VALUE);
+                int suspendedHours = int.Parse(setting.Find(x => x.MASTER_CODE == "MAX_HOLD").VALUE);
+
+                #region Validation
                 /// If login on suspend
                 if (user.LOGIN_HOLD > DateTime.Now)
-                    return string.Format("Your account are suspend for {0} hour(s)", suspendedHours);
+                    validationMessage = string.Format("Your account are suspend for {0} hour(s)", suspendedHours);
 
                 /// If user is null OR wrong password
                 if (user == null || !user.VerifyPassword(login.PASSWORD))
@@ -97,13 +109,13 @@ namespace Bank.Api.Controllers
                         user.LOGIN_HOLD = DateTime.Now.AddHours(1);
                         /// Update user
                         _repository.Update(user);
-                        return string.Format("Max login attempt exceeded! Account will suspended for {0} hour(s)", suspendedHours);
+                        validationMessage = string.Format("Max login attempt exceeded! Account will suspended for {0} hour(s)", suspendedHours);
                     }
                     else
                     {
                         /// Update user
                         _repository.Update(user);
-                        return "Username / Password invalid!";
+                        validationMessage = "Username / Password invalid!";
                     }
                 }
 
@@ -111,32 +123,7 @@ namespace Bank.Api.Controllers
                 user.LOGIN_FAILED = 0;
                 /// Update user
                 _repository.Update(user);
-            }
-
-            if (mode == "change_password")
-            {
-                if (user == null) return "Username not recognized";
-
-                if (login.PASSWORD == login.NEWPASSWORD) return "Can't use the same password as the old password";
-            }
-
-            return "";
-        }
-
-        [HttpPost]
-        public IActionResult Authenticate(LoginModel login)
-        {
-            JwtSecurityToken token = null;
-            var claims = new List<Claim>();
-
-            string validationMessage = "";
-
-            try
-            {
-                var user = _repository.List<User>().Find(x => x.USERNAME == login.USERNAME);
-
-                /// Validation function
-                validationMessage = Validation("login", user, login);
+                #endregion
 
                 if (validationMessage == "")
                 {
