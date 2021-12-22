@@ -42,6 +42,14 @@ namespace Bank.Api.Controllers
             return Ok();
         }
 
+        [HttpPost]
+        public IActionResult Upload(Upload upload)
+        {
+            upload.convertToFile(); // Dapat dari FE bentuknya string base64, kita convert ke IFormFile
+            upload.doUpload(); // Upload ke folder, lokasi nya bisa lihat di model Upload.cs
+            return Ok(upload.status);
+        }
+
         [Authorize]
         [ServiceFilter(typeof(AdminAccessOnly))]
         [HttpGet]
