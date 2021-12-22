@@ -272,45 +272,5 @@ namespace Bank.Api.Controllers
                 return BadRequest(ex.Message.ToString());
             }
         }
-
-        private void Email(string mailTo, string htmlString)
-        {
-            try
-            {
-                /// Get setting
-                var mailSetting = _repository.List<RefMaster>().FindAll(x => x.MASTER_GROUP == "EMAIL");
-
-                /// Email
-                string mailFrom = mailSetting.Find(x => x.MASTER_CODE == "MAIL_FROM").VALUE;
-                string mailFromPassword = mailSetting.Find(x => x.MASTER_CODE == "MAIL_FROM_PASSWORD").VALUE;
-                string mailSubject = mailSetting.Find(x => x.MASTER_CODE == "MAIL_SUBJECT").VALUE;
-                string mailBody = mailSetting.Find(x => x.MASTER_CODE == "MAIL_BODY").VALUE;
-
-                /// SMTP
-                string smtpServer = mailSetting.Find(x => x.MASTER_CODE == "SMTP_SERVER").VALUE;
-                int smtpPort = int.Parse(mailSetting.Find(x => x.MASTER_CODE == "SMTP_PORT").VALUE);
-                bool smtpSSL = mailSetting.Find(x => x.MASTER_CODE == "SMTP_SSL").VALUE == "true" ? true : false;
-
-                MailMessage mail = new();
-                mail.From = new MailAddress(mailFrom);
-                mail.To.Add(mailTo);
-                mail.Subject = mailSubject;
-                mail.Body = mailBody;
-                //Attachment attachment = new Attachment(filename);
-                //mail.Attachments.Add(attachment);
-
-                SmtpClient SmtpServer = new SmtpClient(smtpServer);
-                SmtpServer.Port = smtpPort;
-                SmtpServer.Credentials = new System.Net.NetworkCredential(mailFrom, mailFromPassword);
-                SmtpServer.EnableSsl = smtpSSL;
-
-                SmtpServer.Send(mail);
-            }
-            catch (Exception ex)
-            {
-                ex.Message.ToString();
-            }
-        }
-
     }
 }
