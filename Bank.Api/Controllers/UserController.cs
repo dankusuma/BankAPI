@@ -78,8 +78,8 @@ namespace Bank.Api.Controllers
             return Ok(upload.status);
         }
 
-        //[Authorize]
-        //[ServiceFilter(typeof(AdminAccessOnly))]
+        [Authorize]
+        [ServiceFilter(typeof(AdminAccessOnly))]
         [HttpGet]
         public IActionResult Get()
         {
@@ -91,33 +91,81 @@ namespace Bank.Api.Controllers
         [HttpPost]
         public IActionResult Authenticate(LoginModel login)
         {
-            var user = _repository.List<User>().Find(x => x.USERNAME == login.USERNAME);
-
             var claims = new List<Claim>();
 
-            if (user == null || !user.VerifyPassword(login.PASSWORD))
+            string validationMessage = "";
+
+            try
             {
-                return Unauthorized();
+                /// Get setting
+                var setting = _repository.List<RefMaster>().FindAll(x => x.MASTER_GROUP == "SETTING");
+                /// Get user list
+                var user = _repository.List<User>().Find(x => x.USERNAME == login.USERNAME);
+
+                /// Maximum failed login attempt
+                int maxFailed = int.Parse(setting.Find(x => x.MASTER_CODE == "MAX_LOGIN").VALUE);
+                int suspendedHours = int.Parse(setting.Find(x => x.MASTER_CODE == "MAX_HOLD").VALUE);
+
+                #region Validation
+                /// If login on suspend
+                if (user.LOGIN_HOLD > DateTime.Now)
+                    validationMessage = string.Format("Your account are suspend for {0} hour(s)", suspendedHours);
+
+                /// If user is null OR wrong password
+                if (user == null || !user.VerifyPassword(login.PASSWORD))
+                {
+                    /// Set Increment by 1 for LOGIN_FAILED field
+                    user.LOGIN_FAILED = user.LOGIN_FAILED + 1;
+
+                    /// If failed attempt > max failed
+                    if (user.LOGIN_FAILED >= maxFailed)
+                    {
+                        /// Set LOGIN_HOLD to DateTime.Now + 1 Hour
+                        user.LOGIN_HOLD = DateTime.Now.AddHours(1);
+                        /// Update user
+                        _repository.Update(user);
+                        validationMessage = string.Format("Max login attempt exceeded! Account will suspended for {0} hour(s)", suspendedHours);
+                    }
+                    else
+                    {
+                        /// Update user
+                        _repository.Update(user);
+                        validationMessage = "Username / Password invalid!";
+                    }
+                }
+
+                /// Once login success, reset Login Attempt to 0 
+                user.LOGIN_FAILED = 0;
+                /// Update user
+                _repository.Update(user);
+                #endregion
+
+                if (validationMessage == "")
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, user.USER_TYPE.ToString()));
+                    claims.Add(new Claim(ClaimTypes.Name, user.USERNAME));
+
+                    var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
+
+                    var token = new JwtSecurityToken(
+                        issuer: _configuration["JWT:Issuer"],
+                        audience: _configuration["JWT:Audience"],
+                        expires: DateTime.Now.AddMinutes(15),
+                        claims: claims,
+                        signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
+                        );
+
+                    return Ok(new JwtSecurityTokenHandler().WriteToken(token));
+                }
+                else
+                {
+                    return Unauthorized(validationMessage);
+                }
             }
-
-            claims.Add(new Claim(ClaimTypes.Role, user.USER_TYPE.ToString()));
-            claims.Add(new Claim(ClaimTypes.Name, user.USERNAME));
-
-
-            var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
-
-            var token = new JwtSecurityToken(
-                issuer: _configuration["JWT:Issuer"],
-                audience: _configuration["JWT:Audience"],
-                expires: DateTime.Now.AddMinutes(15),
-                claims: claims,
-                signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
-                );
-
-
-            return Ok(new JwtSecurityTokenHandler().WriteToken(token));
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message.ToString());
+            }
         }
-
-
     }
 }
