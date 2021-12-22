@@ -20,14 +20,14 @@ namespace Bank.Infrastructure.Data
 
         public T GetById<T>(int id) where T : BaseEntity
         {
-            return _dbContext.Set<T>().SingleOrDefault(e => e.id == id);
+            return _dbContext.Set<T>().SingleOrDefault(e => e.ID == id);
         }
 
         public T GetById<T>(int id, string include) where T : BaseEntity
         {
             return _dbContext.Set<T>()
                 .Include(include)
-                .SingleOrDefault(e => e.id == id);
+                .SingleOrDefault(e => e.ID == id);
         }
 
         public List<T> List<T>(ISpecification<T> spec = null) where T : BaseEntity
