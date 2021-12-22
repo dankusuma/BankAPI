@@ -99,17 +99,24 @@ namespace Bank.Api.Controllers
             {
                 /// Get setting
                 var setting = _repository.List<RefMaster>().FindAll(x => x.MASTER_GROUP == "SETTING");
+
                 /// Get user list
                 var user = _repository.List<User>().Find(x => x.USERNAME == login.USERNAME);
 
                 /// Maximum failed login attempt
                 int maxFailed = int.Parse(setting.Find(x => x.MASTER_CODE == "MAX_LOGIN").VALUE);
-                int suspendedHours = int.Parse(setting.Find(x => x.MASTER_CODE == "MAX_HOLD").VALUE);
+
+                /// Waiting time if failed login attempt exceeded
+                double suspendedHours = int.Parse(setting.Find(x => x.MASTER_CODE == "MAX_HOLD").VALUE);
+
+                string suspendedHoursText = suspendedHours >= 60 ? "hour(s)" : "minute(s)";
+
+                suspendedHours = suspendedHours >= 60 ? suspendedHours / 60 : suspendedHours;
 
                 #region Validation
                 /// If login on suspend
                 if (user.LOGIN_HOLD > DateTime.Now)
-                    validationMessage = string.Format("Your account are suspend for {0} hour(s)", suspendedHours);
+                    validationMessage = string.Format("Your account are suspend for {0} {1}", suspendedHours, suspendedHoursText);
 
                 /// If user is null OR wrong password
                 if (user == null || !user.VerifyPassword(login.PASSWORD))
@@ -122,9 +129,10 @@ namespace Bank.Api.Controllers
                     {
                         /// Set LOGIN_HOLD to DateTime.Now + 1 Hour
                         user.LOGIN_HOLD = DateTime.Now.AddHours(1);
+
                         /// Update user
                         _repository.Update(user);
-                        validationMessage = string.Format("Max login attempt exceeded! Account will suspended for {0} hour(s)", suspendedHours);
+                        validationMessage = string.Format("Max login attempt exceeded! Account will suspended for {0} {1}", suspendedHours, suspendedHoursText);
                     }
                     else
                     {
@@ -133,11 +141,6 @@ namespace Bank.Api.Controllers
                         validationMessage = "Username / Password invalid!";
                     }
                 }
-
-                /// Once login success, reset Login Attempt to 0 
-                user.LOGIN_FAILED = 0;
-                /// Update user
-                _repository.Update(user);
                 #endregion
 
                 if (validationMessage == "")
@@ -154,6 +157,12 @@ namespace Bank.Api.Controllers
                         claims: claims,
                         signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
                         );
+
+                    /// Once login success, reset Login Attempt to 0 
+                    user.LOGIN_FAILED = 0;
+
+                    /// Update user
+                    _repository.Update(user);
 
                     return Ok(new JwtSecurityTokenHandler().WriteToken(token));
                 }
