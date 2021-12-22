@@ -31,40 +31,14 @@ namespace Bank.Api.Controllers
         [HttpPost]
         public IActionResult Add(User user)
         {
-            string validation = user.dataValidation();
-            if (validation.Equals("Success")) {
-                if (_repository.List<User>().Exists(x => x.USERNAME == user.USERNAME))
-                {
-                    return BadRequest();
-                }
-
-                user.HashPassword();
-                user.HashPin();
-                _repository.Add(user);
-                return Ok("Success");
-            }
-            else
+            if (_repository.List<User>().Exists(x => x.USERNAME == user.USERNAME))
             {
-                return Ok("Error400");
+                return BadRequest();
             }
-            
-        }
-        [HttpPost]
-        public IActionResult isUserDuplicate(string username) {
-            if (_repository.List<User>().Exists(x => x.USERNAME == username)) {
-                return Ok("Duplicate Username");
-            }
-            return Ok("Success");
-        }
 
-        [HttpPost]
-        public IActionResult isEmailDuplicate(string email)
-        {
-            if (_repository.List<User>().Exists(x => x.EMAIL == email))
-            {
-                return Ok("Duplicate Email");
-            }
-            return Ok("Success");
+            user.HashPassword();
+            _repository.Add(user);
+            return Ok();
         }
 
         [HttpPost]
