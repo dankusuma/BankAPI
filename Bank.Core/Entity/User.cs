@@ -27,7 +27,7 @@ namespace Bank.Core.Entity
         public string KABUPATEN_KOTA { get; set; } //
         public char GENDER { get; set; } //
         public string JOB { get; set; } //
-        public string BIRTH_DATE { get; set; } //
+        public DateTime BIRTH_DATE { get; set; } //
         public string KECAMATAN { get; set; } //
         public string PROVINCE { get; set; } //
         public string MARITAL_STATUS { get; set; } //
