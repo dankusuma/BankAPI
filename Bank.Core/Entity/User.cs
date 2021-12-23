@@ -36,75 +36,74 @@ namespace Bank.Core.Entity
 
         public string dataValidation()
         {
-            string failed = "error400";
             var emailValidation = new EmailAddressAttribute();
-            if (!USERNAME.All(char.IsLetter) && USERNAME.Length > 20)
+            if (!USERNAME.All(char.IsLetter) || USERNAME.Length > 20)
             {
-                return failed;
+                return "Username not valid";
             }
-            if (!NAME.All(char.IsLetter) && NAME.Length > 100)
+            if (!NAME.All(char.IsLetter) || NAME.Length > 100)
             {
-                return failed;
+                return "Name not valid";
             }
             if (ADDRESS.Length > 200)
             {
-                return failed;
+                return "Address not valid";
             }
-            if (!PHONE.All(char.IsDigit) && PHONE.Length > 20)
+            if (!PHONE.All(char.IsDigit) || PHONE.Length > 20)
             {
-                return failed;
+                return "Phone not valid";
             }
             if (FOTO_KTP_SELFIE.Length > 30)
             {
-                return failed;
+                return "Foto KTP Selfie not valid";
             }
             if (VIDEO.Length > 30)
             {
-                return failed;
+                return "Video not valid";
             }
             if (USER_TYPE.Length > 20)
             {
-                return failed;
+                return "User Type not valid";
             }
-            if (!NIK.All(char.IsDigit) && NIK.Length > 20)
+            if (!NIK.All(char.IsDigit) || NIK.Length > 20)
             {
-                return failed;
+                return "NIK not valid";
             }
-            if (!BIRTH_PLACE.All(char.IsLetter) && BIRTH_PLACE.Length > 30)
+            if (!BIRTH_PLACE.All(char.IsLetter) || BIRTH_PLACE.Length > 30)
             {
-                return failed;
+                return "Birth Place not valid";
             }
-            if (!MOTHER_MAIDEN_NAME.All(char.IsLetter) && MOTHER_MAIDEN_NAME.Length > 100)
+            if (!MOTHER_MAIDEN_NAME.All(char.IsLetter) || MOTHER_MAIDEN_NAME.Length > 100)
             {
-                return failed;
+                return "Mother Maiden Name not valid";
             }
-            if (!KELURAHAN.All(char.IsLetter) && KELURAHAN.Length > 50)
+            if (!KELURAHAN.All(char.IsLetter) || KELURAHAN.Length > 50)
             {
-                return failed;
+                return "Kelurahan not valid";
             }
-            if (!KABUPATEN_KOTA.All(char.IsLetter) && KABUPATEN_KOTA.Length > 50)
+            if (!KABUPATEN_KOTA.All(char.IsLetter) || KABUPATEN_KOTA.Length > 50)
             {
-                return failed;
+                return "Kabupaten Kota not valid";
             }
-            if (!JOB.All(char.IsLetter) && JOB.Length > 50)
+            if (!JOB.All(char.IsLetter) || JOB.Length > 50)
             {
-                return failed;
+                return "Job not valid";
             }
-            if (!KECAMATAN.All(char.IsLetter) && KECAMATAN.Length > 50)
+            if (!KECAMATAN.All(char.IsLetter) || KECAMATAN.Length > 50)
             {
-                return failed;
+                return "Kecamatan not valid";
             }
-            if (!PROVINCE.All(char.IsLetter) && PROVINCE.Length > 50)
+            if (!PROVINCE.All(char.IsLetter) || PROVINCE.Length > 50)
             {
-                return failed;
+                return "Province not valid";
             }
-            if (!MARITAL_STATUS.All(char.IsLetter) && MARITAL_STATUS.Length > 50)
+            if (!MARITAL_STATUS.All(char.IsLetter) || MARITAL_STATUS.Length > 50)
             {
-                return failed;
+                return "Marital Status not valid";
             }
-            if (!emailValidation.IsValid(EMAIL) && EMAIL.Length > 100)
+            if (!emailValidation.IsValid(EMAIL) || EMAIL.Length > 100)
             {
-                return failed;
+                return "Email not valid";
             }
             return "Success";
         }
