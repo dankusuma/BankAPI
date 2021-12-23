@@ -247,9 +247,10 @@ namespace Bank.Api.Controllers
 
                             return Ok(string.Format("Email sent to {0} successfully", forgotPassword.EMAIL));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
-                            return BadRequest(string.Format("Failed to sent email to {0}", forgotPassword.EMAIL));
+                            //return BadRequest(string.Format("Failed to sent email to {0}", forgotPassword.EMAIL));
+                            return BadRequest(ex.Message.ToString());
                         }
                         #endregion
                     }
