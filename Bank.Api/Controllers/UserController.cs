@@ -43,7 +43,7 @@ namespace Bank.Api.Controllers
                 {
                     return BadRequest("Username or Email already exist");
                 }
-                
+
 
                 user.HashPassword();
                 user.HashPin();
@@ -274,89 +274,6 @@ namespace Bank.Api.Controllers
                     else
                     {
                         return Unauthorized("Email not registered");
-                    }
-                }
-                else
-                {
-                    return BadRequest("Must provide email");
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message.ToString());
-            }
-        }
-
-
-        [HttpPost]
-        public IActionResult ForgotPassword(ForgotPassword forgotPassword)
-        {
-            try
-            {
-                if (forgotPassword.EMAIL != "")
-                {
-                    var user = _repository.List<User>().Find(x => x.EMAIL == forgotPassword.EMAIL);
-
-                    if (user == null && user.EMAIL == "" || user.EMAIL == null)
-                    {
-                        return Unauthorized("Email not registered");
-                    }
-                    else
-                    {
-                        #region Send Mail
-                        /// Get setting
-                        var mailSetting = _repository.List<RefMaster>().FindAll(x => x.MASTER_GROUP == "EMAIL");
-
-                        /// Email
-                        string username = user.USERNAME.Trim();
-                        string userHash = user.HashValue(username);
-                        string mailTo = forgotPassword.EMAIL;
-                        string mailFrom = mailSetting.Find(x => x.MASTER_CODE == "MAIL_FROM").VALUE;
-                        string mailFromPassword = mailSetting.Find(x => x.MASTER_CODE == "MAIL_FROM_PASSWORD").VALUE;
-                        string mailSubject = mailSetting.Find(x => x.MASTER_CODE == "MAIL_SUBJECT_RESET").VALUE;
-                        string mailBodyTemplatePath = mailSetting.Find(x => x.MASTER_CODE == "MAIL_BODY_TEMPLATE_PATH").VALUE;
-                        string mailLink = mailSetting.Find(x => x.MASTER_CODE == "MAIL_LINK").VALUE;
-                        string mailSignature = mailSetting.Find(x => x.MASTER_CODE == "MAIL_SIGNATURE").VALUE;
-
-                        /// Path
-                        string templatePath = Directory.GetCurrentDirectory() + mailBodyTemplatePath;
-                        var x1 = Directory.GetDirectoryRoot(templatePath);
-                        StreamReader str = new StreamReader(templatePath);
-                        string MailText = str.ReadToEnd();
-                        str.Close();
-
-                        /// Set Username
-                        MailText = MailText.Replace("[username]", username);
-                        /// Set Link
-                        MailText = MailText.Replace("[link]", string.Format(mailLink, username, userHash));
-                        /// Set Username
-                        MailText = MailText.Replace("[teamname]", mailSignature);
-                        /// Set Body Text
-                        string mailBody = MailText;
-
-                        /// SMTP
-                        string smtpServer = mailSetting.Find(x => x.MASTER_CODE == "SMTP_SERVER").VALUE;
-                        int smtpPort = int.Parse(mailSetting.Find(x => x.MASTER_CODE == "SMTP_PORT").VALUE);
-                        bool smtpSSL = mailSetting.Find(x => x.MASTER_CODE == "SMTP_SSL").VALUE == "true" ? true : false;
-                        bool smtpDefaultCredentials = mailSetting.Find(x => x.MASTER_CODE == "SMTP_DEFAULT_CREDENTIALS").VALUE == "true" ? true : false;
-
-                        MailMessage mail = new();
-                        mail.From = new MailAddress(mailFrom);
-                        mail.To.Add(mailTo);
-                        mail.Subject = mailSubject;
-                        mail.Body = mailBody;
-                        mail.IsBodyHtml = true;
-
-                        SmtpClient SmtpServer = new SmtpClient(smtpServer);
-                        SmtpServer.Port = smtpPort;
-                        SmtpServer.UseDefaultCredentials = smtpDefaultCredentials;
-                        SmtpServer.Credentials = new System.Net.NetworkCredential(mailFrom, mailFromPassword);
-                        SmtpServer.EnableSsl = smtpSSL;
-
-                        SmtpServer.Send(mail);
-
-                        return Ok(string.Format("Email sent to {0} successfully", forgotPassword.EMAIL));
-                        #endregion
                     }
                 }
                 else
