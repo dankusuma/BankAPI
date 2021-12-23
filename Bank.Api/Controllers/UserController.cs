@@ -79,8 +79,10 @@ namespace Bank.Api.Controllers
         [HttpPost]
         public IActionResult Upload(Upload upload)
         {
+            string maxPictureSize = _repository.List<RefMaster>().Find(x => x.MASTER_CODE == "MAX_PICTURE_UPLOAD_SIZE").VALUE;
+            string maxVideoSize = _repository.List<RefMaster>().Find(x => x.MASTER_CODE == "MAX_VIDEO_UPLOAD_SIZE").VALUE;
             upload.convertToFile(); // Dapat dari FE bentuknya string base64, kita convert ke IFormFile
-            upload.doUpload(); // Upload ke folder, lokasi nya bisa lihat di model Upload.cs
+            upload.doUpload(maxPictureSize, maxVideoSize); // Upload ke folder, lokasi nya bisa lihat di model Upload.cs
             return Ok(upload.status);
         }
 
@@ -259,6 +261,7 @@ namespace Bank.Api.Controllers
 
                             SmtpClient SmtpServer = new SmtpClient(smtpServer);
                             SmtpServer.Port = smtpPort;
+                            SmtpServer.UseDefaultCredentials = true;
                             SmtpServer.Credentials = new System.Net.NetworkCredential(mailFrom, mailFromPassword);
                             SmtpServer.EnableSsl = smtpSSL;
 

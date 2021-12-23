@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Bank.Core.Entity
@@ -41,7 +42,7 @@ namespace Bank.Core.Entity
             {
                 return "Username not valid";
             }
-            if (!NAME.All(char.IsLetter) || NAME.Length > 100)
+            if (!Regex.IsMatch(NAME, @"^[a-zA-Z ]+$") || NAME.Length > 100)
             {
                 return "Name not valid";
             }
@@ -69,35 +70,36 @@ namespace Bank.Core.Entity
             {
                 return "NIK not valid";
             }
-            if (!BIRTH_PLACE.All(char.IsLetter) || BIRTH_PLACE.Length > 30)
+
+            if (!Regex.IsMatch(BIRTH_PLACE, @"^[a-zA-Z ]+$") || BIRTH_PLACE.Length > 30)
             {
                 return "Birth Place not valid";
             }
-            if (!MOTHER_MAIDEN_NAME.All(char.IsLetter) || MOTHER_MAIDEN_NAME.Length > 100)
+            if (!Regex.IsMatch(MOTHER_MAIDEN_NAME, @"^[a-zA-Z ]+$") || MOTHER_MAIDEN_NAME.Length > 100)
             {
                 return "Mother Maiden Name not valid";
             }
-            if (!KELURAHAN.All(char.IsLetter) || KELURAHAN.Length > 50)
+            if (!Regex.IsMatch(KELURAHAN, @"^[a-zA-Z ]+$") || KELURAHAN.Length > 50)
             {
                 return "Kelurahan not valid";
             }
-            if (!KABUPATEN_KOTA.All(char.IsLetter) || KABUPATEN_KOTA.Length > 50)
+            if (!Regex.IsMatch(KABUPATEN_KOTA, @"^[a-zA-Z ]+$") || KABUPATEN_KOTA.Length > 50)
             {
                 return "Kabupaten Kota not valid";
             }
-            if (!JOB.All(char.IsLetter) || JOB.Length > 50)
+            if (!Regex.IsMatch(JOB, @"^[a-zA-Z ]+$") || JOB.Length > 50)
             {
                 return "Job not valid";
             }
-            if (!KECAMATAN.All(char.IsLetter) || KECAMATAN.Length > 50)
+            if (!Regex.IsMatch(KECAMATAN, @"^[a-zA-Z ]+$") || KECAMATAN.Length > 50)
             {
                 return "Kecamatan not valid";
             }
-            if (!PROVINCE.All(char.IsLetter) || PROVINCE.Length > 50)
+            if (!Regex.IsMatch(PROVINCE, @"^[a-zA-Z ]+$") || PROVINCE.Length > 50)
             {
                 return "Province not valid";
             }
-            if (!MARITAL_STATUS.All(char.IsLetter) || MARITAL_STATUS.Length > 50)
+            if (!Regex.IsMatch(MARITAL_STATUS, @"^[a-zA-Z ]+$") || MARITAL_STATUS.Length > 50)
             {
                 return "Marital Status not valid";
             }
