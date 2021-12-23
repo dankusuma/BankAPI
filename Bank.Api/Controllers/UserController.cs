@@ -181,7 +181,6 @@ namespace Bank.Api.Controllers
             }
         }
 
-
         [HttpPost]
         public IActionResult ForgotPassword(ForgotPassword forgotPassword)
         {
