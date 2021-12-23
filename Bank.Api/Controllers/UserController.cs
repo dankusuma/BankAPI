@@ -40,7 +40,7 @@ namespace Bank.Api.Controllers
             {
                 if (_repository.List<User>().Exists(x => x.USERNAME == user.USERNAME))
                 {
-                    return BadRequest();
+                    return BadRequest("Username already exist");
                 }
 
                 user.HashPassword();
