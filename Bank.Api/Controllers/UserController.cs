@@ -228,6 +228,12 @@ namespace Bank.Api.Controllers
                         string mailLink = mailSetting.Find(x => x.MASTER_CODE == "MAIL_LINK").VALUE;
                         string mailSignature = mailSetting.Find(x => x.MASTER_CODE == "MAIL_SIGNATURE").VALUE;
 
+                        /// Update CHANGE_PASSWORD_TOKEN field with new hash
+                        user.CHANGE_PASSWORD_TOKEN = userHash;
+
+                        /// Update user
+                        _repository.Update(user);
+
                         /// Path
                         string templatePath = Directory.GetCurrentDirectory() + mailBodyTemplatePath;
                         var x1 = Directory.GetDirectoryRoot(templatePath);
