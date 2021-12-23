@@ -34,10 +34,12 @@ namespace Bank.Api.Controllers
             string validation = user.dataValidation();
             if (validation.Equals("Success"))
             {
-                if (_repository.List<User>().Exists(x => x.USERNAME == user.USERNAME))
+
+                if (_repository.List<User>().Exists(x => x.USERNAME == user.USERNAME || x.EMAIL == user.EMAIL))
                 {
-                    return BadRequest("Username already exist");
+                    return BadRequest("Username or Email already exist");
                 }
+                
 
                 user.HashPassword();
                 user.HashPin();
@@ -46,7 +48,7 @@ namespace Bank.Api.Controllers
             }
             else
             {
-                return Ok("Error400");
+                return BadRequest(validation);
             }
 
         }
