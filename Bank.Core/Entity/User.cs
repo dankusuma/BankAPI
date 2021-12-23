@@ -34,6 +34,8 @@ namespace Bank.Core.Entity
         public string MARITAL_STATUS { get; set; } //
         public string EMAIL { get; set; } //
         public string NIK { get; set; } //
+        public string CHANGE_PASSWORD_TOKEN { get; set; }
+
 
         public string dataValidation()
         {

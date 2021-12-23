@@ -8,6 +8,8 @@ namespace Bank.Core.Entity
 {
     public class ChangePassword
     {
+        public string TOKEN { get; set; }
+
         public string USERNAME { get; set; }
 
         public string PASSWORD { get; set; }

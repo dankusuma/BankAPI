@@ -279,5 +279,63 @@ namespace Bank.Api.Controllers
                 return BadRequest(ex.Message.ToString());
             }
         }
+
+        [HttpPost]
+        public IActionResult ChangePassword(ChangePassword changePassword)
+        {
+            string validationMessage = "";
+
+            try
+            {
+                #region Validation
+                if (changePassword == null)
+                {
+                    validationMessage = "Please provide complete data";
+                }
+                else if (changePassword.USERNAME == "" || changePassword.USERNAME == null)
+                {
+                    validationMessage = "Please provide username";
+                }
+                else if (changePassword.NEW_PASSWORD == "" || changePassword.NEW_PASSWORD == null)
+                {
+                    validationMessage = "Please provide new password";
+                }
+
+                /// Get OLD password using USERNAME
+                User user = _repository.List<User>().Find(x => x.USERNAME == changePassword.USERNAME);
+
+                if (user == null)
+                {
+                    validationMessage = "Username not registered";
+                }
+                else if (user.CHANGE_PASSWORD_TOKEN != changePassword.TOKEN)
+                {
+                    validationMessage = "Invalid token";
+                }
+                else if (user.VerifyPassword(changePassword.NEW_PASSWORD) == true)
+                {
+                    validationMessage = "New password must be different from the old one.";
+                }
+                #endregion
+
+                if (validationMessage == "")
+                {
+                    user.PASSWORD = changePassword.NEW_PASSWORD;
+                    user.HashPassword();
+                    /// Update user
+                    _repository.Update(user);
+
+                    return Ok("Password updated successfully");
+                }
+                else
+                {
+                    return BadRequest(validationMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message.ToString());
+            }
+        }
     }
 }
