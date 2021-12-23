@@ -111,15 +111,20 @@ namespace Bank.Api.Controllers
 
                 string suspendedHoursText = suspendedHours >= 60 ? "hour(s)" : "minute(s)";
 
-                suspendedHours = suspendedHours >= 60 ? suspendedHours / 60 : suspendedHours;
+                double suspendedTime = suspendedHours >= 60 ? suspendedHours / 60 : suspendedHours;
 
                 #region Validation
+                if (user == null)
+                {
+                    validationMessage = "Username / Password invalid!";
+                }
                 /// If login on suspend
-                if (user.LOGIN_HOLD > DateTime.Now)
-                    validationMessage = string.Format("Your account are suspend for {0} {1}", suspendedHours, suspendedHoursText);
-
+                else if (user.LOGIN_HOLD > DateTime.Now)
+                {
+                    validationMessage = string.Format("Your account are suspend for {0} {1}", suspendedTime, suspendedHoursText);
+                }
                 /// If user is null OR wrong password
-                if (user == null || !user.VerifyPassword(login.PASSWORD))
+                else if (!user.VerifyPassword(login.PASSWORD))
                 {
                     /// Set Increment by 1 for LOGIN_FAILED field
                     user.LOGIN_FAILED = user.LOGIN_FAILED + 1;
@@ -127,12 +132,20 @@ namespace Bank.Api.Controllers
                     /// If failed attempt > max failed
                     if (user.LOGIN_FAILED >= maxFailed)
                     {
-                        /// Set LOGIN_HOLD to DateTime.Now + 1 Hour
-                        user.LOGIN_HOLD = DateTime.Now.AddHours(1);
+                        if (suspendedHours >= 60)
+                        {
+                            /// Set LOGIN_HOLD to DateTime.Now + 1 Hour
+                            user.LOGIN_HOLD = DateTime.Now.AddHours(suspendedTime);
+                        }
+                        else
+                        {
+                            /// Set LOGIN_HOLD to DateTime.Now + 1 Hour
+                            user.LOGIN_HOLD = DateTime.Now.AddMinutes(suspendedTime);
+                        }
 
                         /// Update user
                         _repository.Update(user);
-                        validationMessage = string.Format("Max login attempt exceeded! Account will suspended for {0} {1}", suspendedHours, suspendedHoursText);
+                        validationMessage = string.Format("Max login attempt exceeded! Account will suspended for {0} {1}", suspendedTime, suspendedHoursText);
                     }
                     else
                     {
