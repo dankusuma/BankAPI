@@ -70,6 +70,7 @@ namespace Bank.Core.Entity
             {
                 return "NIK not valid";
             }
+
             if (!Regex.IsMatch(BIRTH_PLACE, @"^[a-zA-Z ]+$") || BIRTH_PLACE.Length > 30)
             {
                 return "Birth Place not valid";
