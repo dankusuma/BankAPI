@@ -50,12 +50,14 @@ namespace Bank.Core.Entity
 
         }
 
-        public void doUpload()
+        public void doUpload(string maxPictureSize, string maxVideoSize)
         {
+            int maxPictureSizenumber = Convert.ToInt32(maxPictureSize);
+            int maxVideoSizenumber = Convert.ToInt32(maxVideoSize);
             try
             {
-                string statusFoto = doUpload(uploadedPhoto, new[] { ".jpg", ".png", ".bmp" }, photoName);
-                string statusVideo = doUpload(uploadedVideo, new[] { ".mp4", ".avi", ".mpg" }, videoName);
+                string statusFoto = doUpload(uploadedPhoto, new[] { ".jpg", ".png", ".bmp" }, photoName, maxPictureSizenumber);
+                string statusVideo = doUpload(uploadedVideo, new[] { ".mp4", ".avi", ".mpg" }, videoName, maxVideoSizenumber);
                 if (statusFoto != "Success!")
                 {
                     status = statusFoto;
@@ -76,7 +78,7 @@ namespace Bank.Core.Entity
                 status = e.Message;
             }
         }
-        public string doUpload(IFormFile file, string[] listFormat, string namaFile)
+        public string doUpload(IFormFile file, string[] listFormat, string namaFile, int size)
         {
             if (file == null || file.Length == 0)
             {
@@ -86,7 +88,7 @@ namespace Bank.Core.Entity
             {
                 return "Invalid Format for : " + namaFile;
             }
-            else if (file.Length > 10000000)
+            else if (file.Length > size)
             {
                 return "File Kebesaran";
             }
