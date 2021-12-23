@@ -252,10 +252,6 @@ namespace Bank.Api.Controllers
                             return BadRequest(string.Format("Failed to sent email to {0}", forgotPassword.EMAIL));
                         }
                         #endregion
-
-
-
-
                     }
                     else
                     {
