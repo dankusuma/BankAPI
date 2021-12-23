@@ -189,10 +189,13 @@ namespace Bank.Api.Controllers
             {
                 if (forgotPassword.EMAIL != "")
                 {
-                    OkObjectResult res = (OkObjectResult)isEmailDuplicate(forgotPassword.EMAIL);
                     var user = _repository.List<User>().Find(x => x.EMAIL == forgotPassword.EMAIL);
 
-                    if (res.Value.ToString() != "Success")
+                    if (user == null && user.EMAIL == "" || user.EMAIL == null)
+                    {
+                        return Unauthorized("Email not registered");
+                    }
+                    else
                     {
                         #region Send Mail
                         try
@@ -201,7 +204,8 @@ namespace Bank.Api.Controllers
                             var mailSetting = _repository.List<RefMaster>().FindAll(x => x.MASTER_GROUP == "EMAIL");
 
                             /// Email
-                            string userName = user.USERNAME.Trim();
+                            string username = user.USERNAME.Trim();
+                            string userHash = user.HashValue(username);
                             string mailTo = forgotPassword.EMAIL;
                             string mailFrom = mailSetting.Find(x => x.MASTER_CODE == "MAIL_FROM").VALUE;
                             string mailFromPassword = mailSetting.Find(x => x.MASTER_CODE == "MAIL_FROM_PASSWORD").VALUE;
@@ -218,9 +222,9 @@ namespace Bank.Api.Controllers
                             str.Close();
 
                             /// Set Username
-                            MailText = MailText.Replace("[username]", userName);
+                            MailText = MailText.Replace("[username]", username);
                             /// Set Link
-                            MailText = MailText.Replace("[link]", mailLink);
+                            MailText = MailText.Replace("[link]", string.Format(mailLink, username, userHash));
                             /// Set Username
                             MailText = MailText.Replace("[teamname]", mailSignature);
                             /// Set Body Text
@@ -253,10 +257,6 @@ namespace Bank.Api.Controllers
                             return BadRequest(ex.Message.ToString());
                         }
                         #endregion
-                    }
-                    else
-                    {
-                        return Unauthorized("Email not registered");
                     }
                 }
                 else

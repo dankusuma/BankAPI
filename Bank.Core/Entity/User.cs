@@ -108,6 +108,14 @@ namespace Bank.Core.Entity
             }
             return "Success";
         }
+
+        public string HashValue(string text)
+        {
+            var sha1 = System.Security.Cryptography.SHA1.Create();
+            var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(text));
+            return string.Concat(hash.Select(b => b.ToString("x2")));
+        }
+
         public void HashPassword()
         {
             var sha1 = System.Security.Cryptography.SHA1.Create();
