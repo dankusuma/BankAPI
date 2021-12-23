@@ -244,6 +244,7 @@ namespace Bank.Api.Controllers
 
                             SmtpClient SmtpServer = new SmtpClient(smtpServer);
                             SmtpServer.Port = smtpPort;
+                            SmtpServer.UseDefaultCredentials = true;
                             SmtpServer.Credentials = new System.Net.NetworkCredential(mailFrom, mailFromPassword);
                             SmtpServer.EnableSsl = smtpSSL;
 
