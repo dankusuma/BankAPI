@@ -55,7 +55,7 @@ namespace Bank.Api.Controllers
         {
             if (_repository.List<User>().Exists(x => x.USERNAME == username))
             {
-                return Ok("Duplicate Username");
+                return Unauthorized("Duplicate Username");
             }
             return Ok("Success");
         }
@@ -65,7 +65,7 @@ namespace Bank.Api.Controllers
         {
             if (_repository.List<User>().Exists(x => x.EMAIL == email))
             {
-                return Ok("Duplicate Email");
+                return Unauthorized("Duplicate Email");
             }
             return Ok("Success");
         }
