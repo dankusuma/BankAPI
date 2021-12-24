@@ -184,17 +184,24 @@ namespace Bank.Api.Controllers
         [HttpPost]
         public IActionResult ForgotPassword(ForgotPassword forgotPassword)
         {
+            string validationMessage = "";
             try
             {
-                if (forgotPassword.EMAIL != "")
+                #region Validation 1
+                if (forgotPassword.EMAIL == "") validationMessage = "Can't fill in an empty email";
+                else if (!forgotPassword.ValidateEmail()) validationMessage = "Incorrect email format";
+                #endregion
+
+                if (validationMessage == "")
                 {
                     var user = _repository.List<User>().Find(x => x.EMAIL == forgotPassword.EMAIL);
 
-                    if (user == null && user.EMAIL == "" || user.EMAIL == null)
-                    {
-                        return Unauthorized("Email not registered");
-                    }
-                    else
+                    #region Validation 2
+                    if (user == null) validationMessage = "Unregistered email";
+                    else if (user.EMAIL == "" || user.EMAIL == null) validationMessage = "Unregistered email";
+                    #endregion
+
+                    if (validationMessage == "")
                     {
                         #region Send Mail
                         /// Get setting
@@ -257,10 +264,14 @@ namespace Bank.Api.Controllers
                         return Ok(string.Format("Email sent to {0} successfully", forgotPassword.EMAIL));
                         #endregion
                     }
+                    else
+                    {
+                        return Unauthorized(validationMessage);
+                    }
                 }
                 else
                 {
-                    return BadRequest("Must provide email");
+                    return BadRequest(validationMessage);
                 }
             }
             catch (Exception ex)
