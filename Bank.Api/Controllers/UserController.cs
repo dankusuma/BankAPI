@@ -243,7 +243,6 @@ namespace Bank.Api.Controllers
 
                         /// Path
                         string templatePath = Directory.GetCurrentDirectory() + mailBodyTemplatePath;
-                        var x1 = Directory.GetDirectoryRoot(templatePath);
                         StreamReader str = new StreamReader(templatePath);
                         string MailText = str.ReadToEnd();
                         str.Close();
