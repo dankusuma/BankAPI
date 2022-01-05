@@ -227,6 +227,7 @@ namespace Bank.Api.Controllers
                         /// Email
                         string username = user.USERNAME.Trim();
                         string userHash = user.HashValue(username);
+                        string userHashExpiration = DateTime.Now.AddMinutes(15).ToString("yyyyMMddHHmm");
                         string mailTo = forgotPassword.EMAIL;
                         string mailFrom = mailSetting.Find(x => x.MASTER_CODE == "MAIL_FROM").VALUE;
                         string mailFromPassword = mailSetting.Find(x => x.MASTER_CODE == "MAIL_FROM_PASSWORD").VALUE;
@@ -237,6 +238,7 @@ namespace Bank.Api.Controllers
 
                         /// Update CHANGE_PASSWORD_TOKEN field with new hash
                         user.CHANGE_PASSWORD_TOKEN = userHash;
+                        user.CHANGE_PASSWORD_TOKEN_EXPIRATION = userHashExpiration;
 
                         /// Update user
                         _repository.Update(user);
@@ -250,7 +252,7 @@ namespace Bank.Api.Controllers
                         /// Set Username
                         MailText = MailText.Replace("[username]", username);
                         /// Set Link
-                        MailText = MailText.Replace("[link]", string.Format(mailLink, username, userHash));
+                        MailText = MailText.Replace("[link]", string.Format(mailLink, username, userHash, userHashExpiration));
                         /// Set Username
                         MailText = MailText.Replace("[teamname]", mailSignature);
                         /// Set Body Text
