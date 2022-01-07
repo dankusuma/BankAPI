@@ -440,5 +440,46 @@ namespace Bank.Api.Controllers
                 return BadRequest(ex.Message.ToString());
             }
         }
+
+        [HttpPost]
+        public IActionResult PINStatus(Pin pin)
+        {
+            string validationMessage = "";
+            string pinStatus = "false";
+            pin.mode = "status";
+
+            try
+            {
+                /// Get OLD password using USERNAME
+                User user = _repository.List<User>().Find(x => x.USERNAME == pin.USERNAME);
+
+                /// RETURN Unauthorized when username NOT FOUND
+                if (user == null) return Unauthorized("Username not registered.");
+
+                /// SET user to pin model for validation
+                pin.user = user;
+
+                /// Validation for PIN
+                validationMessage = pin.PinValidation();
+
+                if (validationMessage == "")
+                {
+                    /// VALIDATE pin if empty or null then return false other than that true
+                    if (user.PIN == "") pinStatus = "false";
+                    else if (user.PIN == null) pinStatus = "false";
+                    else pinStatus = "true";
+
+                    return Ok(pinStatus);
+                }
+                else
+                {
+                    return BadRequest(validationMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message.ToString());
+            }
+        }
     }
 }
