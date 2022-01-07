@@ -2,9 +2,7 @@
 using Bank.Core;
 using Bank.Core.Entity;
 using Bank.Core.Interface;
-using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -12,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
-using System.Net;
 using System.Net.Mail;
 using System.Security.Claims;
 using System.Text;
@@ -38,12 +35,10 @@ namespace Bank.Api.Controllers
             string validation = user.dataValidation();
             if (validation.Equals("Success"))
             {
-
                 if (_repository.List<User>().Exists(x => x.USERNAME == user.USERNAME || x.EMAIL == user.EMAIL))
                 {
                     return BadRequest("Username or Email already exist");
                 }
-
 
                 user.HashPassword();
                 user.HashPin();
@@ -166,8 +161,16 @@ namespace Bank.Api.Controllers
 
                 if (validationMessage == "")
                 {
+                    string pinStatus = "false";
+
+                    // VALIDATE pin if empty or null then return false other than that true
+                    if (user.PIN == "") pinStatus = "false";
+                    else if (user.PIN == null) pinStatus = "false";
+                    else pinStatus = "true";
+
                     claims.Add(new Claim(ClaimTypes.Role, user.USER_TYPE.ToString()));
                     claims.Add(new Claim(ClaimTypes.Name, user.USERNAME));
+                    claims.Add(new Claim("pin_status", pinStatus));
 
                     var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
 
@@ -314,7 +317,7 @@ namespace Bank.Api.Controllers
                 {
                     validationMessage = "Please provide username";
                 }
-                else if (changePassword.NEW_PASSWORD == "" || changePassword.NEW_PASSWORD == null)
+                else if (changePassword.NEW_PASSWORD == "" || changePassword.PASSWORD == null)
                 {
                     validationMessage = "Please provide new password";
                 }
@@ -340,6 +343,88 @@ namespace Bank.Api.Controllers
                 {
                     user.PASSWORD = changePassword.NEW_PASSWORD;
                     user.HashPassword();
+
+                    /// Update user
+                    _repository.Update(user);
+
+                    return Ok("Password updated successfully");
+                }
+                else
+                {
+                    return BadRequest(validationMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message.ToString());
+            }
+        }
+
+        [HttpPost]
+        public IActionResult CreatePIN(Pin pin)
+        {
+            string validationMessage = "";
+            pin.mode = "create";
+
+            try
+            {
+                /// GET user data
+                User user = _repository.List<User>().Find(x => x.USERNAME == pin.USERNAME);
+
+                /// RETURN Unauthorized when username NOT FOUND
+                if (user == null) return Unauthorized("Username not registered.");
+
+                /// SET user to pin model for validation
+                pin.user = user;
+
+                /// Validation for PIN
+                validationMessage = pin.PinValidation();
+
+                if (validationMessage == "")
+                {
+                    /// IF no error found CREATE pin hash
+                    user.PIN = pin.HashPIN(pin.PIN);
+
+                    /// UPDATE data to user
+                    _repository.Update(user);
+
+                    return Ok("PIN created successfully. Please re-login");
+                }
+                else
+                {
+                    return BadRequest(validationMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message.ToString());
+            }
+        }
+
+        [HttpPost]
+        public IActionResult ChangePIN(Pin pin)
+        {
+            string validationMessage = "";
+            pin.mode = "change";
+
+            try
+            {
+                /// Get OLD password using USERNAME
+                User user = _repository.List<User>().Find(x => x.USERNAME == pin.USERNAME);
+
+                /// RETURN Unauthorized when username NOT FOUND
+                if (user == null) return Unauthorized("Username not registered.");
+
+                /// SET user to pin model for validation
+                pin.user = user;
+
+                /// Validation for PIN
+                validationMessage = pin.PinValidation();
+
+                if (validationMessage == "")
+                {
+                    user.PIN = pin.HashPIN(pin.NEW_PIN);
+
                     /// Update user
                     _repository.Update(user);
 
