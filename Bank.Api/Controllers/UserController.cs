@@ -2,9 +2,7 @@
 using Bank.Core;
 using Bank.Core.Entity;
 using Bank.Core.Interface;
-using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -12,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
-using System.Net;
 using System.Net.Mail;
 using System.Security.Claims;
 using System.Text;
@@ -38,12 +35,10 @@ namespace Bank.Api.Controllers
             string validation = user.dataValidation();
             if (validation.Equals("Success"))
             {
-
                 if (_repository.List<User>().Exists(x => x.USERNAME == user.USERNAME || x.EMAIL == user.EMAIL))
                 {
                     return BadRequest("Username or Email already exist");
                 }
-                
 
                 user.HashPassword();
                 user.HashPin();
@@ -166,8 +161,16 @@ namespace Bank.Api.Controllers
 
                 if (validationMessage == "")
                 {
+                    string pinStatus = "false";
+
+                    // VALIDATE pin if empty or null then return false other than that true
+                    if (user.PIN == "") pinStatus = "false";
+                    else if (user.PIN == null) pinStatus = "false";
+                    else pinStatus = "true";
+
                     claims.Add(new Claim(ClaimTypes.Role, user.USER_TYPE.ToString()));
                     claims.Add(new Claim(ClaimTypes.Name, user.USERNAME));
+                    claims.Add(new Claim("pin_status", pinStatus));
 
                     var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
 
@@ -198,88 +201,279 @@ namespace Bank.Api.Controllers
             }
         }
 
-
         [HttpPost]
         public IActionResult ForgotPassword(ForgotPassword forgotPassword)
         {
+            string validationMessage = "";
             try
             {
-                if (forgotPassword.EMAIL != "")
+                #region Validation 1
+                if (forgotPassword.EMAIL == "") validationMessage = "Can't fill in an empty email";
+                else if (!forgotPassword.ValidateEmail()) validationMessage = "Incorrect email format";
+                #endregion
+
+                if (validationMessage == "")
                 {
                     var user = _repository.List<User>().Find(x => x.EMAIL == forgotPassword.EMAIL);
 
-                    if (user == null && user.EMAIL == "" || user.EMAIL == null)
+                    #region Validation 2
+                    if (user == null) validationMessage = "Unregistered email";
+                    else if (user.EMAIL == "" || user.EMAIL == null) validationMessage = "Unregistered email";
+                    #endregion
+
+                    if (validationMessage == "")
                     {
-                        return Unauthorized("Email not registered");
+                        #region Send Mail
+                        /// Get setting
+                        var mailSetting = _repository.List<RefMaster>().FindAll(x => x.MASTER_GROUP == "EMAIL");
+
+                        /// Email
+                        string username = user.USERNAME.Trim();
+                        string userHash = user.HashValue(username);
+                        string userHashExpiration = DateTime.Now.AddMinutes(15).ToString("yyyyMMddHHmm");
+                        string mailTo = forgotPassword.EMAIL;
+                        string mailFrom = mailSetting.Find(x => x.MASTER_CODE == "MAIL_FROM").VALUE;
+                        string mailFromPassword = mailSetting.Find(x => x.MASTER_CODE == "MAIL_FROM_PASSWORD").VALUE;
+                        string mailSubject = mailSetting.Find(x => x.MASTER_CODE == "MAIL_SUBJECT_RESET").VALUE;
+                        string mailBodyTemplatePath = mailSetting.Find(x => x.MASTER_CODE == "MAIL_BODY_TEMPLATE_PATH").VALUE;
+                        string mailLink = mailSetting.Find(x => x.MASTER_CODE == "MAIL_LINK").VALUE;
+                        string mailSignature = mailSetting.Find(x => x.MASTER_CODE == "MAIL_SIGNATURE").VALUE;
+
+                        /// Update CHANGE_PASSWORD_TOKEN field with new hash
+                        user.CHANGE_PASSWORD_TOKEN = userHash;
+                        user.CHANGE_PASSWORD_TOKEN_EXPIRATION = userHashExpiration;
+
+                        /// Update user
+                        _repository.Update(user);
+
+                        /// Path
+                        string templatePath = Directory.GetCurrentDirectory() + mailBodyTemplatePath;
+                        StreamReader str = new StreamReader(templatePath);
+                        string MailText = str.ReadToEnd();
+                        str.Close();
+
+                        /// Set Username
+                        MailText = MailText.Replace("[username]", username);
+                        /// Set Link
+                        MailText = MailText.Replace("[link]", string.Format(mailLink, username, userHash, userHashExpiration));
+                        /// Set Username
+                        MailText = MailText.Replace("[teamname]", mailSignature);
+                        /// Set Body Text
+                        string mailBody = MailText;
+
+                        /// SMTP
+                        string smtpServer = mailSetting.Find(x => x.MASTER_CODE == "SMTP_SERVER").VALUE;
+                        int smtpPort = int.Parse(mailSetting.Find(x => x.MASTER_CODE == "SMTP_PORT").VALUE);
+                        bool smtpSSL = mailSetting.Find(x => x.MASTER_CODE == "SMTP_SSL").VALUE == "true" ? true : false;
+                        bool smtpDefaultCredentials = mailSetting.Find(x => x.MASTER_CODE == "SMTP_DEFAULT_CREDENTIALS").VALUE == "true" ? true : false;
+
+                        MailMessage mail = new();
+                        mail.From = new MailAddress(mailFrom);
+                        mail.To.Add(mailTo);
+                        mail.Subject = mailSubject;
+                        mail.Body = mailBody;
+                        mail.IsBodyHtml = true;
+
+                        SmtpClient SmtpServer = new SmtpClient(smtpServer);
+                        SmtpServer.Port = smtpPort;
+                        SmtpServer.UseDefaultCredentials = smtpDefaultCredentials;
+                        SmtpServer.Credentials = new System.Net.NetworkCredential(mailFrom, mailFromPassword);
+                        SmtpServer.EnableSsl = smtpSSL;
+
+                        SmtpServer.Send(mail);
+
+                        return Ok(string.Format("Email sent to {0} successfully", forgotPassword.EMAIL));
+                        #endregion
                     }
                     else
                     {
-                        #region Send Mail
-                        try
-                        {
-                            /// Get setting
-                            var mailSetting = _repository.List<RefMaster>().FindAll(x => x.MASTER_GROUP == "EMAIL");
-
-                            /// Email
-                            string username = user.USERNAME.Trim();
-                            string userHash = user.HashValue(username);
-                            string mailTo = forgotPassword.EMAIL;
-                            string mailFrom = mailSetting.Find(x => x.MASTER_CODE == "MAIL_FROM").VALUE;
-                            string mailFromPassword = mailSetting.Find(x => x.MASTER_CODE == "MAIL_FROM_PASSWORD").VALUE;
-                            string mailSubject = mailSetting.Find(x => x.MASTER_CODE == "MAIL_SUBJECT_RESET").VALUE;
-                            string mailBodyTemplatePath = mailSetting.Find(x => x.MASTER_CODE == "MAIL_BODY_TEMPLATE_PATH").VALUE;
-                            string mailLink = mailSetting.Find(x => x.MASTER_CODE == "MAIL_LINK").VALUE;
-                            string mailSignature = mailSetting.Find(x => x.MASTER_CODE == "MAIL_SIGNATURE").VALUE;
-
-                            /// Path
-                            string templatePath = Directory.GetCurrentDirectory() + mailBodyTemplatePath;
-                            var x1 = Directory.GetDirectoryRoot(templatePath);
-                            StreamReader str = new StreamReader(templatePath);
-                            string MailText = str.ReadToEnd();
-                            str.Close();
-
-                            /// Set Username
-                            MailText = MailText.Replace("[username]", username);
-                            /// Set Link
-                            MailText = MailText.Replace("[link]", string.Format(mailLink, username, userHash));
-                            /// Set Username
-                            MailText = MailText.Replace("[teamname]", mailSignature);
-                            /// Set Body Text
-                            string mailBody = MailText;
-
-                            /// SMTP
-                            string smtpServer = mailSetting.Find(x => x.MASTER_CODE == "SMTP_SERVER").VALUE;
-                            int smtpPort = int.Parse(mailSetting.Find(x => x.MASTER_CODE == "SMTP_PORT").VALUE);
-                            bool smtpSSL = mailSetting.Find(x => x.MASTER_CODE == "SMTP_SSL").VALUE == "true" ? true : false;
-
-                            MailMessage mail = new();
-                            mail.From = new MailAddress(mailFrom);
-                            mail.To.Add(mailTo);
-                            mail.Subject = mailSubject;
-                            mail.Body = mailBody;
-                            mail.IsBodyHtml = true;
-
-                            SmtpClient SmtpServer = new SmtpClient(smtpServer);
-                            SmtpServer.Port = smtpPort;
-                            SmtpServer.UseDefaultCredentials = true;
-                            SmtpServer.Credentials = new System.Net.NetworkCredential(mailFrom, mailFromPassword);
-                            SmtpServer.EnableSsl = smtpSSL;
-
-                            SmtpServer.Send(mail);
-
-                            return Ok(string.Format("Email sent to {0} successfully", forgotPassword.EMAIL));
-                        }
-                        catch (Exception ex)
-                        {
-                            //return BadRequest(string.Format("Failed to sent email to {0}", forgotPassword.EMAIL));
-                            return BadRequest(ex.Message.ToString());
-                        }
-                        #endregion
+                        return Unauthorized(validationMessage);
                     }
                 }
                 else
                 {
-                    return BadRequest("Must provide email");
+                    return BadRequest(validationMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message.ToString());
+            }
+        }
+
+        [HttpPost]
+        public IActionResult ChangePassword(ChangePassword changePassword)
+        {
+            string validationMessage = "";
+
+            try
+            {
+                #region Validation
+                if (changePassword == null)
+                {
+                    validationMessage = "Please provide complete data";
+                }
+                else if (changePassword.USERNAME == "" || changePassword.USERNAME == null)
+                {
+                    validationMessage = "Please provide username";
+                }
+                else if (changePassword.NEW_PASSWORD == "" || changePassword.PASSWORD == null)
+                {
+                    validationMessage = "Please provide new password";
+                }
+
+                /// Get OLD password using USERNAME
+                User user = _repository.List<User>().Find(x => x.USERNAME == changePassword.USERNAME);
+
+                if (user == null)
+                {
+                    validationMessage = "Username not registered";
+                }
+                else if (user.CHANGE_PASSWORD_TOKEN != changePassword.TOKEN)
+                {
+                    validationMessage = "Invalid token";
+                }
+                else if (user.VerifyPassword(changePassword.NEW_PASSWORD) == true)
+                {
+                    validationMessage = "New password must be different from the old one.";
+                }
+                #endregion
+
+                if (validationMessage == "")
+                {
+                    user.PASSWORD = changePassword.NEW_PASSWORD;
+                    user.HashPassword();
+
+                    /// Update user
+                    _repository.Update(user);
+
+                    return Ok("Password updated successfully");
+                }
+                else
+                {
+                    return BadRequest(validationMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message.ToString());
+            }
+        }
+
+        [HttpPost]
+        public IActionResult CreatePIN(Pin pin)
+        {
+            string validationMessage = "";
+            pin.mode = "create";
+
+            try
+            {
+                /// GET user data
+                User user = _repository.List<User>().Find(x => x.USERNAME == pin.USERNAME);
+
+                /// RETURN Unauthorized when username NOT FOUND
+                if (user == null) return Unauthorized("Username not registered.");
+
+                /// SET user to pin model for validation
+                pin.user = user;
+
+                /// Validation for PIN
+                validationMessage = pin.PinValidation();
+
+                if (validationMessage == "")
+                {
+                    /// IF no error found CREATE pin hash
+                    user.PIN = pin.HashPIN(pin.PIN);
+
+                    /// UPDATE data to user
+                    _repository.Update(user);
+
+                    return Ok("PIN created successfully. Please re-login");
+                }
+                else
+                {
+                    return BadRequest(validationMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message.ToString());
+            }
+        }
+
+        [HttpPost]
+        public IActionResult ChangePIN(Pin pin)
+        {
+            string validationMessage = "";
+            pin.mode = "change";
+
+            try
+            {
+                /// Get OLD password using USERNAME
+                User user = _repository.List<User>().Find(x => x.USERNAME == pin.USERNAME);
+
+                /// RETURN Unauthorized when username NOT FOUND
+                if (user == null) return Unauthorized("Username not registered.");
+
+                /// SET user to pin model for validation
+                pin.user = user;
+
+                /// Validation for PIN
+                validationMessage = pin.PinValidation();
+
+                if (validationMessage == "")
+                {
+                    user.PIN = pin.HashPIN(pin.NEW_PIN);
+
+                    /// Update user
+                    _repository.Update(user);
+
+                    return Ok("Password updated successfully");
+                }
+                else
+                {
+                    return BadRequest(validationMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message.ToString());
+            }
+        }
+
+        [HttpPost]
+        public IActionResult PINStatus(Pin pin)
+        {
+            string validationMessage = "";
+            string pinStatus = "false";
+            pin.mode = "status";
+
+            try
+            {
+                /// Get OLD password using USERNAME
+                User user = _repository.List<User>().Find(x => x.USERNAME == pin.USERNAME);
+
+                /// RETURN Unauthorized when username NOT FOUND
+                if (user == null) return Unauthorized("Username not registered.");
+
+                /// SET user to pin model for validation
+                pin.user = user;
+
+                /// Validation for PIN
+                validationMessage = pin.PinValidation();
+
+                if (validationMessage == "")
+                {
+                    /// VALIDATE pin if empty or null then return false other than that true
+                    if (user.PIN == "") pinStatus = "false";
+                    else if (user.PIN == null) pinStatus = "false";
+                    else pinStatus = "true";
+
+                    return Ok(pinStatus);
+                }
+                else
+                {
+                    return BadRequest(validationMessage);
                 }
             }
             catch (Exception ex)
