@@ -15,5 +15,9 @@ namespace Bank.Core.Entity
         public string PASSWORD { get; set; }
 
         public string NEW_PASSWORD { get; set; }
+
+        public string MODE { get; set; }
+
+        public string REFF { get; set; }
     }
 }

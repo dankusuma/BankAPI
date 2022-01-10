@@ -329,7 +329,7 @@ namespace Bank.Api.Controllers
                 {
                     validationMessage = "Username not registered";
                 }
-                else if (user.CHANGE_PASSWORD_TOKEN != changePassword.TOKEN)
+                else if (user.CHANGE_PASSWORD_TOKEN != changePassword.TOKEN && changePassword.MODE == "create")
                 {
                     validationMessage = "Invalid token";
                 }
