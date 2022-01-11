@@ -1,5 +1,6 @@
 ﻿using Bank.Core.Entity;
 using NUnit.Framework;
+using System;
 
 namespace UnitTest.Users_Test
 {
@@ -20,6 +21,23 @@ namespace UnitTest.Users_Test
         {
             var result = user.VerifyPassword("admin");
             Assert.IsTrue(result);
+        }
+
+        [TestCase("admin")]
+        public void VerifyPassword_EqualTo(string password)
+        {
+            user.PASSWORD = password;
+            user.HashPassword();
+
+            Assert.IsTrue(user.VerifyPassword(password));
+        }
+
+        [TestCase("")]
+        [TestCase(null)]
+        public void Password_Empty(string password)
+        {
+            user.PASSWORD = password;
+            Assert.Throws<ArgumentNullException>(() => user.HashPassword());
         }
     }
 }

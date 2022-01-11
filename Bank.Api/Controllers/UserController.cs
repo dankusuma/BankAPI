@@ -28,7 +28,6 @@ namespace Bank.Api.Controllers
             _configuration = configuration;
         }
 
-
         [HttpPost]
         public IActionResult Add(User user)
         {
