@@ -175,7 +175,7 @@ namespace Bank.Core.Entity
             return hashed == PIN;
         }
 
-        private bool IsEmailValid(string emailaddress)
+        public bool IsEmailValid(string emailaddress)
         {
             try
             {

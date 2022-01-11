@@ -1,10 +1,6 @@
 ﻿using Bank.Core.Entity;
 using NUnit.Framework;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace UnitTest.Users_Test
 {
@@ -81,6 +77,22 @@ namespace UnitTest.Users_Test
             };
 
             Assert.Throws<ArgumentException>(() => _user.dataValidation());
+        }
+
+        [TestCase("dummy@dummy.dummy")]
+        [TestCase("saya.punya@email.disini")]
+        [TestCase("saiful.setiawan@mitrais.com")]
+        public void Validate_EmailValidator_ReturnTrue(string email)
+        {
+            Assert.IsTrue(_user.IsEmailValid(email));
+        }
+
+        [TestCase("dummy.dummyummy")]
+        [TestCase("ini.email_saya")]
+        [TestCase("saiful_cvsetiawan")]
+        public void Validate_EmailValidator_ReturnFalse(string email)
+        {
+            Assert.IsFalse(_user.IsEmailValid(email));
         }
     }
 }
