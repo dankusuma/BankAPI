@@ -114,7 +114,7 @@ namespace Bank.Core.Entity
 
         public string HashValue(string text)
         {
-            if (text == null)
+            if (string.IsNullOrEmpty(text))
             {
                 throw new ArgumentNullException("It should not be null!");
             }
@@ -126,7 +126,7 @@ namespace Bank.Core.Entity
 
         public void HashPassword()
         {
-            if (PASSWORD == null)
+            if (string.IsNullOrEmpty(PASSWORD))
             {
                 throw new ArgumentNullException("It should not be null!");
             }
@@ -148,10 +148,16 @@ namespace Bank.Core.Entity
 
         public void HashPin()
         {
+            if (string.IsNullOrEmpty(PIN))
+            {
+                throw new ArgumentNullException("It should not be null!");
+            }
+
             var sha1 = System.Security.Cryptography.SHA1.Create();
             var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(PIN));
             PIN = string.Concat(hash.Select(b => b.ToString("x2")));
 
+            Console.WriteLine(PIN);
         }
 
         public bool VerifyPin(string _pin)
@@ -160,7 +166,7 @@ namespace Bank.Core.Entity
             var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(_pin));
             string hashed = string.Concat(hash.Select(b => b.ToString("x2")));
 
-            return hashed == PASSWORD;
+            return hashed == PIN;
         }
     }
 }
