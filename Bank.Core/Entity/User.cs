@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Net.Mail;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -41,74 +42,79 @@ namespace Bank.Core.Entity
         public string dataValidation()
         {
             var emailValidation = new EmailAddressAttribute();
-            if (!USERNAME.All(char.IsLetter) || USERNAME.Length > 20)
+            if (string.IsNullOrEmpty(USERNAME) || !USERNAME.All(char.IsLetter) || USERNAME.Length > 20)
             {
-                return "Username not valid";
+                throw new ArgumentException("User name is not valid!");
             }
-            if (!Regex.IsMatch(NAME, @"^[a-zA-Z ]+$") || NAME.Length > 100)
+            if (PASSWORD.Length < 8 || PASSWORD.Length > 50)
             {
-                return "Name not valid";
+                throw new ArgumentException("password is not valid!");
             }
-            if (ADDRESS.Length > 200)
+            if (string.IsNullOrEmpty(NAME) || !Regex.IsMatch(NAME, @"^[a-zA-Z0-9 ]+$") || NAME.Length > 100)
             {
-                return "Address not valid";
+                throw new ArgumentException("Name is not valid! Name must under 100 characters");
             }
-            if (!PHONE.All(char.IsDigit) || PHONE.Length > 20)
+            if (string.IsNullOrEmpty(ADDRESS) || ADDRESS.Length > 200)
             {
-                return "Phone not valid";
+                throw new ArgumentException("Address must under 200 characters");
             }
-            if (FOTO_KTP_SELFIE.Length > 30)
+            if (string.IsNullOrEmpty(PHONE) || !PHONE.All(char.IsDigit) || PHONE.Length > 20)
             {
-                return "Foto KTP Selfie not valid";
+                throw new ArgumentException("Phone number must contain number only and under 20 digits");
             }
-            if (VIDEO.Length > 30)
+            if (string.IsNullOrEmpty(FOTO_KTP_SELFIE) || FOTO_KTP_SELFIE.Length > 30)
             {
-                return "Video not valid";
+                throw new ArgumentException("KTP link is not valid!");
             }
-            if (USER_TYPE.Length > 20)
+            if (string.IsNullOrEmpty(VIDEO) ||  VIDEO.Length > 30)
             {
-                return "User Type not valid";
+                throw new ArgumentException("VIDEO link is not valid!");
             }
-            if (!NIK.All(char.IsDigit) || NIK.Length > 20)
+            if (string.IsNullOrEmpty(USER_TYPE) || USER_TYPE.Length > 20)
             {
-                return "NIK not valid";
+                throw new ArgumentException("user role is not valid!");
             }
-            if (!Regex.IsMatch(BIRTH_PLACE, @"^[a-zA-Z ]+$") || BIRTH_PLACE.Length > 30)
+            if (!NIK.All(char.IsDigit) || NIK.Length != 16)
             {
-                return "Birth Place not valid";
+                throw new ArgumentException("NIK must 16 characters");
             }
-            if (!Regex.IsMatch(MOTHER_MAIDEN_NAME, @"^[a-zA-Z ]+$") || MOTHER_MAIDEN_NAME.Length > 100)
+            if (string.IsNullOrEmpty(BIRTH_PLACE) || !Regex.IsMatch(BIRTH_PLACE, @"^[a-zA-Z ]+$") || BIRTH_PLACE.Length > 30)
             {
-                return "Mother Maiden Name not valid";
+                throw new ArgumentException("Birthplace is not valid!");
             }
-            if (!Regex.IsMatch(KELURAHAN, @"^[a-zA-Z ]+$") || KELURAHAN.Length > 50)
+            if (string.IsNullOrEmpty(MOTHER_MAIDEN_NAME) || !Regex.IsMatch(MOTHER_MAIDEN_NAME, @"^[a-zA-Z ]+$") || MOTHER_MAIDEN_NAME.Length > 100)
             {
-                return "Kelurahan not valid";
+                throw new ArgumentException("Mother name is not valid!");
             }
-            if (!Regex.IsMatch(KABUPATEN_KOTA, @"^[a-zA-Z ]+$") || KABUPATEN_KOTA.Length > 50)
+            if (string.IsNullOrEmpty(KELURAHAN) || !Regex.IsMatch(KELURAHAN, @"^[a-zA-Z ]+$") || KELURAHAN.Length > 50)
             {
-                return "Kabupaten Kota not valid";
+                throw new ArgumentException("Kelurahan is not valid!");
             }
-            if (!Regex.IsMatch(JOB, @"^[a-zA-Z ]+$") || JOB.Length > 50)
+            if (string.IsNullOrEmpty(KABUPATEN_KOTA) || !Regex.IsMatch(KABUPATEN_KOTA, @"^[a-zA-Z ]+$") || KABUPATEN_KOTA.Length > 50)
             {
-                return "Job not valid";
+                throw new ArgumentException("Kabupaten is not valid!");
             }
-            if (!Regex.IsMatch(KECAMATAN, @"^[a-zA-Z ]+$") || KECAMATAN.Length > 50)
+            if (string.IsNullOrEmpty(JOB) || !Regex.IsMatch(JOB, @"^[a-zA-Z ]+$") || JOB.Length > 50)
             {
-                return "Kecamatan not valid";
+                throw new ArgumentException("Job is not valid!");
             }
-            if (!Regex.IsMatch(PROVINCE, @"^[a-zA-Z ]+$") || PROVINCE.Length > 50)
+            if (string.IsNullOrEmpty(KECAMATAN) || !Regex.IsMatch(KECAMATAN, @"^[a-zA-Z ]+$") || KECAMATAN.Length > 50)
             {
-                return "Province not valid";
+                throw new ArgumentException("Kecamatan is not valid!");
             }
-            if (!Regex.IsMatch(MARITAL_STATUS, @"^[a-zA-Z ]+$") || MARITAL_STATUS.Length > 50)
+            if (string.IsNullOrEmpty(PROVINCE) || !Regex.IsMatch(PROVINCE, @"^[a-zA-Z ]+$") || PROVINCE.Length > 50)
             {
-                return "Marital Status not valid";
+                throw new ArgumentException("Province is not valid!");
             }
-            if (!emailValidation.IsValid(EMAIL) || EMAIL.Length > 100)
+            if (string.IsNullOrEmpty(MARITAL_STATUS) || !Regex.IsMatch(MARITAL_STATUS, @"^[a-zA-Z ]+$") || MARITAL_STATUS.Length > 50)
             {
-                return "Email not valid";
+                throw new ArgumentException("Marital status is not valid!");
             }
+            if (string.IsNullOrEmpty(EMAIL) || !IsEmailValid(EMAIL) || EMAIL.Length > 100)
+            {
+                throw new ArgumentException("Email is not valid!");
+            }
+
             return "Success";
         }
 
@@ -167,6 +173,20 @@ namespace Bank.Core.Entity
             string hashed = string.Concat(hash.Select(b => b.ToString("x2")));
 
             return hashed == PIN;
+        }
+
+        private bool IsEmailValid(string emailaddress)
+        {
+            try
+            {
+                MailAddress m = new MailAddress(emailaddress);
+
+                return true;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
         }
     }
 }
