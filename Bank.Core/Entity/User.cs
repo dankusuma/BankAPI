@@ -114,6 +114,11 @@ namespace Bank.Core.Entity
 
         public string HashValue(string text)
         {
+            if (text == null)
+            {
+                throw new ArgumentNullException("It should not be null!");
+            }
+
             var sha1 = System.Security.Cryptography.SHA1.Create();
             var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(text));
             return string.Concat(hash.Select(b => b.ToString("x2")));
@@ -121,6 +126,11 @@ namespace Bank.Core.Entity
 
         public void HashPassword()
         {
+            if (PASSWORD == null)
+            {
+                throw new ArgumentNullException("It should not be null!");
+            }
+
             var sha1 = System.Security.Cryptography.SHA1.Create();
             var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(PASSWORD));
             PASSWORD = string.Concat(hash.Select(b => b.ToString("x2")));
@@ -129,17 +139,11 @@ namespace Bank.Core.Entity
 
         public bool VerifyPassword(string _password)
         {
-            bool result = false;
             var sha1 = System.Security.Cryptography.SHA1.Create();
             var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(_password));
-            _password = string.Concat(hash.Select(b => b.ToString("x2")));
-            if (_password == PASSWORD)
-            {
-                result = true;
-            }
+            string hashed = string.Concat(hash.Select(b => b.ToString("x2")));
 
-            return result;
-
+            return hashed == PASSWORD;
         }
 
         public void HashPin()
@@ -152,18 +156,11 @@ namespace Bank.Core.Entity
 
         public bool VerifyPin(string _pin)
         {
-            bool result = false;
             var sha1 = System.Security.Cryptography.SHA1.Create();
             var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(_pin));
-            _pin = string.Concat(hash.Select(b => b.ToString("x2")));
-            if (_pin == PASSWORD)
-            {
-                result = true;
-            }
+            string hashed = string.Concat(hash.Select(b => b.ToString("x2")));
 
-            return result;
-
+            return hashed == PASSWORD;
         }
-
     }
 }
