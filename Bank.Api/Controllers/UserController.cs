@@ -13,6 +13,8 @@ using System.IO;
 using System.Net.Mail;
 using System.Security.Claims;
 using System.Text;
+using MailKit.Net.Smtp;
+using MimeKit;
 
 namespace Bank.Api.Controllers
 {
@@ -48,8 +50,8 @@ namespace Bank.Api.Controllers
             {
                 return BadRequest(validation);
             }
-
         }
+
         [HttpPost]
         public IActionResult isUserDuplicate(string username)
         {
@@ -273,13 +275,32 @@ namespace Bank.Api.Controllers
                         mail.Body = mailBody;
                         mail.IsBodyHtml = true;
 
-                        SmtpClient SmtpServer = new SmtpClient(smtpServer);
-                        SmtpServer.Port = smtpPort;
-                        SmtpServer.UseDefaultCredentials = smtpDefaultCredentials;
-                        SmtpServer.Credentials = new System.Net.NetworkCredential(mailFrom, mailFromPassword);
-                        SmtpServer.EnableSsl = smtpSSL;
+                        #region New SMTP Email Setting
+                        var client = new MailKit.Net.Smtp.SmtpClient();
+                        client.Connect(smtpServer, smtpPort, true);
 
-                        SmtpServer.Send(mail);
+                        /// Note: since we don't have an OAuth2 token, disable the XOAUTH2 authentication mechanism.
+                        client.AuthenticationMechanisms.Remove("XOAUTH2");
+
+                        /// Note: only needed if the SMTP server requires authentication
+                        client.Authenticate(mailFrom, mailFromPassword);
+
+                        var msg = new MimeMessage();
+                        msg.From.Add(new MailboxAddress("Mail system", mailFrom));
+                        msg.To.Add(new MailboxAddress("Dear user", mailTo));
+                        msg.Subject = mailSubject;
+
+                        var bodyBuilder = new BodyBuilder
+                        {
+                            HtmlBody = mailBody,
+                            TextBody = "Test"
+                        };
+
+                        msg.Body = bodyBuilder.ToMessageBody();
+
+                        client.Send(msg);
+                        client.Disconnect(true);
+                        #endregion
 
                         return Ok(string.Format("Email sent to {0} successfully", forgotPassword.EMAIL));
                         #endregion
