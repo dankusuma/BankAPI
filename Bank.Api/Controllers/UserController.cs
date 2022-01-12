@@ -268,16 +268,38 @@ namespace Bank.Api.Controllers
                         bool smtpSSL = mailSetting.Find(x => x.MASTER_CODE == "SMTP_SSL").VALUE == "true" ? true : false;
                         bool smtpDefaultCredentials = mailSetting.Find(x => x.MASTER_CODE == "SMTP_DEFAULT_CREDENTIALS").VALUE == "true" ? true : false;
 
-                        MailMessage mail = new();
-                        mail.From = new MailAddress(mailFrom);
-                        mail.To.Add(mailTo);
-                        mail.Subject = mailSubject;
-                        mail.Body = mailBody;
-                        mail.IsBodyHtml = true;
-
                         #region New SMTP Email Setting
                         var client = new MailKit.Net.Smtp.SmtpClient();
-                        client.Connect(smtpServer, smtpPort, true);
+                        /*
+                            MailKit.Security.SecureSocketOptions.Auto - 0
+                            MailKit.Security.SecureSocketOptions.None - 1
+                            MailKit.Security.SecureSocketOptions.SslOnConnect - 2
+                            MailKit.Security.SecureSocketOptions.StartTls - 3
+                            MailKit.Security.SecureSocketOptions.StartTlsWhenAvailable - 4
+                        */
+
+                        MailKit.Security.SecureSocketOptions mailKitSecurity;
+                        int mailKitSecureSocketOptions = int.Parse(mailSetting.Find(x => x.MASTER_CODE == "MAILKIT_SECURE_SOCKET_OPTION").VALUE);
+                        switch (mailKitSecureSocketOptions)
+                        {
+                            case 1:
+                                mailKitSecurity = MailKit.Security.SecureSocketOptions.None;
+                                break;
+                            case 2:
+                                mailKitSecurity = MailKit.Security.SecureSocketOptions.SslOnConnect;
+                                break;
+                            case 3:
+                                mailKitSecurity = MailKit.Security.SecureSocketOptions.StartTls;
+                                break;
+                            case 4:
+                                mailKitSecurity = MailKit.Security.SecureSocketOptions.StartTlsWhenAvailable;
+                                break;
+                            default:
+                                mailKitSecurity = MailKit.Security.SecureSocketOptions.Auto;
+                                break;
+                        }
+
+                        client.Connect(smtpServer, smtpPort, mailKitSecurity);
 
                         /// Note: since we don't have an OAuth2 token, disable the XOAUTH2 authentication mechanism.
                         client.AuthenticationMechanisms.Remove("XOAUTH2");
