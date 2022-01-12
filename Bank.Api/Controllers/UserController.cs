@@ -34,7 +34,7 @@ namespace Bank.Api.Controllers
             string validation = user.dataValidation();
             if (validation.Equals("Success"))
             {
-                if (_repository.List<User>().Exists(x => x.USERNAME == user.USERNAME || x.EMAIL == user.EMAIL))
+                if (_repository.List<User>(null).Exists(x => x.USERNAME == user.USERNAME || x.EMAIL == user.EMAIL))
                 {
                     return BadRequest("Username or Email already exist");
                 }
@@ -66,11 +66,7 @@ namespace Bank.Api.Controllers
         [HttpPost]
         public IActionResult isEmailDuplicate(Validate email)
         {
-            if (_repository.List<User>().Exists(x => x.EMAIL == email.EMAIL))
-            {
-                return BadRequest();
-            }
-            else
+            if (_repository.List<User>(null).Exists(x => x.USERNAME == username))
             {
                 return Ok();
             }
@@ -79,11 +75,7 @@ namespace Bank.Api.Controllers
         [HttpPost]
         public IActionResult isPhoneDuplicate(Validate phone)
         {
-            if (_repository.List<User>().Exists(x => x.PHONE == phone.PHONE))
-            {
-                return BadRequest();
-            }
-            else
+            if (_repository.List<User>(null).Exists(x => x.EMAIL == email))
             {
                 return Ok();
             }
@@ -105,8 +97,8 @@ namespace Bank.Api.Controllers
         [HttpPost]
         public IActionResult Upload(Upload upload)
         {
-            string maxPictureSize = _repository.List<RefMaster>().Find(x => x.MASTER_CODE == "MAX_PICTURE_UPLOAD_SIZE").VALUE;
-            string maxVideoSize = _repository.List<RefMaster>().Find(x => x.MASTER_CODE == "MAX_VIDEO_UPLOAD_SIZE").VALUE;
+            string maxPictureSize = _repository.List<RefMaster>(null).Find(x => x.MASTER_CODE == "MAX_PICTURE_UPLOAD_SIZE").VALUE;
+            string maxVideoSize = _repository.List<RefMaster>(null).Find(x => x.MASTER_CODE == "MAX_VIDEO_UPLOAD_SIZE").VALUE;
             upload.convertToFile(); // Dapat dari FE bentuknya string base64, kita convert ke IFormFile
             upload.doUpload(maxPictureSize, maxVideoSize); // Upload ke folder, lokasi nya bisa lihat di model Upload.cs
             return Ok(upload.status);
@@ -117,8 +109,8 @@ namespace Bank.Api.Controllers
         [HttpGet]
         public IActionResult Get()
         {
-            List<User> users = new List<User>();
-            users = _repository.List<User>();
+            List<User> users = new List<User>(null);
+            users = _repository.List<User>(null);
             return Ok(users);
         }
 
@@ -132,10 +124,10 @@ namespace Bank.Api.Controllers
             try
             {
                 /// Get setting
-                var setting = _repository.List<RefMaster>().FindAll(x => x.MASTER_GROUP == "SETTING");
+                var setting = _repository.List<RefMaster>(null).FindAll(x => x.MASTER_GROUP == "SETTING");
 
                 /// Get user list
-                var user = _repository.List<User>().Find(x => x.USERNAME == login.USERNAME);
+                var user = _repository.List<User>(null).Find(x => x.USERNAME == login.USERNAME);
 
                 /// Maximum failed login attempt
                 int maxFailed = int.Parse(setting.Find(x => x.MASTER_CODE == "MAX_LOGIN").VALUE);
@@ -245,7 +237,7 @@ namespace Bank.Api.Controllers
 
                 if (validationMessage == "")
                 {
-                    var user = _repository.List<User>().Find(x => x.EMAIL == forgotPassword.EMAIL);
+                    var user = _repository.List<User>(null).Find(x => x.EMAIL == forgotPassword.EMAIL);
 
                     #region Validation 2
                     if (user == null) validationMessage = "Unregistered email";
@@ -256,7 +248,7 @@ namespace Bank.Api.Controllers
                     {
                         #region Send Mail
                         /// Get setting
-                        var mailSetting = _repository.List<RefMaster>().FindAll(x => x.MASTER_GROUP == "EMAIL");
+                        var mailSetting = _repository.List<RefMaster>(null).FindAll(x => x.MASTER_GROUP == "EMAIL");
 
                         /// Email
                         string username = user.USERNAME.Trim();
@@ -366,7 +358,7 @@ namespace Bank.Api.Controllers
                 }
 
                 /// Get OLD password using USERNAME
-                User user = _repository.List<User>().Find(x => x.USERNAME == changePassword.USERNAME);
+                User user = _repository.List<User>(null).Find(x => x.USERNAME == changePassword.USERNAME);
 
                 if (user == null)
                 {
@@ -412,7 +404,7 @@ namespace Bank.Api.Controllers
             try
             {
                 /// GET user data
-                User user = _repository.List<User>().Find(x => x.USERNAME == pin.USERNAME);
+                User user = _repository.List<User>(null).Find(x => x.USERNAME == pin.USERNAME);
 
                 /// RETURN Unauthorized when username NOT FOUND
                 if (user == null) return Unauthorized("Username not registered.");
@@ -453,7 +445,7 @@ namespace Bank.Api.Controllers
             try
             {
                 /// Get OLD password using USERNAME
-                User user = _repository.List<User>().Find(x => x.USERNAME == pin.USERNAME);
+                User user = _repository.List<User>(null).Find(x => x.USERNAME == pin.USERNAME);
 
                 /// RETURN Unauthorized when username NOT FOUND
                 if (user == null) return Unauthorized("Username not registered.");
@@ -494,7 +486,7 @@ namespace Bank.Api.Controllers
             try
             {
                 /// Get OLD password using USERNAME
-                User user = _repository.List<User>().Find(x => x.USERNAME == pin.USERNAME);
+                User user = _repository.List<User>(null).Find(x => x.USERNAME == pin.USERNAME);
 
                 /// RETURN Unauthorized when username NOT FOUND
                 if (user == null) return Unauthorized("Username not registered.");
