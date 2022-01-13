@@ -62,11 +62,11 @@ namespace Bank.Core.Entity
             {
                 throw new ArgumentException("Phone number must contain number only and under 20 digits");
             }
-            if (string.IsNullOrEmpty(FOTO_KTP_SELFIE) || FOTO_KTP_SELFIE.Length > 30)
+            if (string.IsNullOrEmpty(FOTO_KTP_SELFIE) || FOTO_KTP_SELFIE.Length > 125)
             {
                 throw new ArgumentException("KTP link is not valid!");
             }
-            if (string.IsNullOrEmpty(VIDEO) ||  VIDEO.Length > 30)
+            if (string.IsNullOrEmpty(VIDEO) ||  VIDEO.Length > 125)
             {
                 throw new ArgumentException("VIDEO link is not valid!");
             }

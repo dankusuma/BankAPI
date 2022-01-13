@@ -40,7 +40,7 @@ namespace Bank.Api.Controllers
                 }
 
                 user.HashPassword();
-                user.HashPin();
+                //user.HashPin();
                 _repository.Add(user);
                 return Ok("Success");
             }
