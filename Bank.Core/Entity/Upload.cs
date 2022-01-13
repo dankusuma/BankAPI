@@ -56,7 +56,7 @@ namespace Bank.Core.Entity
             int maxVideoSizenumber = Convert.ToInt32(maxVideoSize);
             try
             {
-                string statusFoto = doUpload(uploadedPhoto, new[] { ".jpg", ".png", ".bmp" }, photoName, maxPictureSizenumber);
+                string statusFoto = doUpload(uploadedPhoto, new[] { ".jpg", ".png", ".bmp", ".jpeg" }, photoName, maxPictureSizenumber);
                 string statusVideo = doUpload(uploadedVideo, new[] { ".mp4", ".avi", ".mpg" }, videoName, maxVideoSizenumber);
                 if (statusFoto != "Success!")
                 {
