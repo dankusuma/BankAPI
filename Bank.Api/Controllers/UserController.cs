@@ -351,11 +351,11 @@ namespace Bank.Api.Controllers
                 {
                     validationMessage = "Please provide complete data";
                 }
-                else if (changePassword.USERNAME == "" || changePassword.USERNAME == null)
+                else if (string.IsNullOrEmpty(changePassword.USERNAME))
                 {
                     validationMessage = "Please provide username";
                 }
-                else if (changePassword.NEW_PASSWORD == "" || changePassword.PASSWORD == null)
+                else if (string.IsNullOrEmpty(changePassword.PASSWORD) || string.IsNullOrEmpty(changePassword.NEW_PASSWORD))
                 {
                     validationMessage = "Please provide new password";
                 }
@@ -369,7 +369,7 @@ namespace Bank.Api.Controllers
                 }
                 else if (user.CHANGE_PASSWORD_TOKEN != changePassword.TOKEN && changePassword.MODE == "create")
                 {
-                    validationMessage = "Invalid token";
+                    validationMessage = $"Invalid token.\nUserToken:{user.CHANGE_PASSWORD_TOKEN}, new token: {changePassword.TOKEN}";
                 }
                 else if (user.VerifyPassword(changePassword.NEW_PASSWORD) == true)
                 {
@@ -389,12 +389,12 @@ namespace Bank.Api.Controllers
                 }
                 else
                 {
-                    return BadRequest(validationMessage);
+                    throw new InvalidDataException(validationMessage);
                 }
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message.ToString());
+                throw new InvalidDataException(ex.Message.ToString());
             }
         }
 

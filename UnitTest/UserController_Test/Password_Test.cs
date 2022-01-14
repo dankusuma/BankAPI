@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
 using System.Collections.Generic;
-using System.Net.Mail;
+using System.IO;
 
 namespace UnitTest.UserController_Test
 {
@@ -90,6 +90,7 @@ namespace UnitTest.UserController_Test
             _config = A.Fake<IConfiguration>();
         }
 
+        #region Request Forgot password
         // TODO: mock about sending email here....
 
         [TestCase("dummy1@dummy.com")]
@@ -150,6 +151,47 @@ namespace UnitTest.UserController_Test
 
             Assert.IsEmpty(_controller.IsEmailExists(_user));
         }
+        #endregion
+        #region Change password
+        [Test]
+        public void ChangePassword_Valid()
+        {
+            var repo = A.Fake<IRepository>();
+            ChangePassword change = new ChangePassword()
+            {
+                USERNAME = "dummyUser",
+                PASSWORD = "DUMMY_DUMMY",
+                NEW_PASSWORD = "newDummyPassword",
+                MODE = "change",
+                REFF = "",
+                TOKEN = "this is not a token"
+            };
+
+            A.CallTo(() => repo.Update(_user)).DoesNothing();
+            A.CallTo(() => repo.List<User>(null)).Returns(GetDummyUser());
+
+            _controller = new UserController(repo, _config);
+            Assert.IsInstanceOf<OkObjectResult>(_controller.ChangePassword(change));
+        }
+
+        [TestCase("dummyUser", "DUMMY_DUMMY", "newDummyPassword", "change", "", "")]
+        [TestCase("", "DUMMY_DUMMY", "newDummyPassword", "change", "", "this is not a token")]
+        [TestCase("dummyUser", "", "newDummyPassword", "change", "", "this is not a token")]
+        [TestCase("dummyUser", "DUMMY_DUMMY", "", "change", "", "this is not a token")]
+        [TestCase("dummyUser", "DUMMY_DUMMY", "newDummyPassword", "create", "", "this is not a token")]
+        [TestCase("user_kosong", "DUMMY_DUMMY", "newDummyPassword", "change", "", "this is not a token")]
+        public void ChangePassword_ReturnFalse(string username, string password, string newPassword, string mode, string reff, string token)
+        {
+            ChangePassword changePassword = new ChangePassword { USERNAME = username, PASSWORD = password, NEW_PASSWORD = newPassword, MODE = mode, REFF = reff, TOKEN = token };
+            var repo = A.Fake<IRepository>();
+
+            A.CallTo(() => repo.Update(_user)).DoesNothing();
+            A.CallTo(() => repo.List<User>(null)).Returns(GetDummyUser());
+
+            _controller = new UserController(repo, _config);
+            Assert.Throws<InvalidDataException>(() => _controller.ChangePassword(changePassword));
+        }
+        #endregion
 
         private List<User> GetDummyUser()
         {
@@ -174,7 +216,8 @@ namespace UnitTest.UserController_Test
                     MARITAL_STATUS = "Lajang",
                     FOTO_KTP_SELFIE = "DUMMY KTP LINK",
                     VIDEO = "DUMMY VIDEO LINK",
-                    USER_TYPE = "user"
+                    USER_TYPE = "user",
+                    CHANGE_PASSWORD_TOKEN="this is not a token"
                 },
                 new User{
                     USERNAME = "dummyUser1",
@@ -218,7 +261,7 @@ namespace UnitTest.UserController_Test
                     VIDEO = "DUMMY VIDEO LINK",
                     USER_TYPE = "user"
                 },
-        };
+            };
             return dummy;
         }
     }
