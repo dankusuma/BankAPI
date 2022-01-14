@@ -11,6 +11,8 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
+using System.Linq;
+using System.Net.Mail;
 using System.Security.Claims;
 using System.Text;
 
@@ -111,117 +113,113 @@ namespace Bank.Api.Controllers
         {
             List<User> users = new List<User>(null);
             users = _repository.List<User>(null);
-            return Ok(users);
+
+            string print = "";
+            users.OrderByDescending(x => x.ID).ToList().ForEach(x => print += x.USERNAME + "-" + x.NAME);
+            return Ok(print);
         }
 
         [HttpPost]
         public IActionResult Authenticate(LoginModel login)
         {
-            var claims = new List<Claim>();
+            var user = VerifyUser(login.USERNAME, login.PASSWORD);
+            return Ok(GenerateJWTToken(user));
+        }
 
-            string validationMessage = "";
+        public User VerifyUser(string username, string password)
+        {
+            /// Get setting
+            var setting = _repository.List<RefMaster>(null).FindAll(x => x.MASTER_GROUP == "SETTING");
 
-            try
-            {
-                /// Get setting
-                var setting = _repository.List<RefMaster>(null).FindAll(x => x.MASTER_GROUP == "SETTING");
+            /// Get user list
+            var user = _repository.List<User>(null).Find(x => x.USERNAME == username);
 
             /// Maximum failed login attempt
             int maxFailed = int.Parse(setting.Find(x => x.MASTER_CODE == "MAX_LOGIN").VALUE);
 
-                /// Maximum failed login attempt
-                int maxFailed = int.Parse(setting.Find(x => x.MASTER_CODE == "MAX_LOGIN").VALUE);
+            /// Waiting time if failed login attempt exceeded
+            double suspendedHours = int.Parse(setting.Find(x => x.MASTER_CODE == "MAX_HOLD").VALUE);
 
-                /// Waiting time if failed login attempt exceeded
-                double suspendedHours = int.Parse(setting.Find(x => x.MASTER_CODE == "MAX_HOLD").VALUE);
+            string suspendedHoursText = suspendedHours >= 60 ? "hour(s)" : "minute(s)";
 
-                string suspendedHoursText = suspendedHours >= 60 ? "hour(s)" : "minute(s)";
+            double suspendedTime = suspendedHours >= 60 ? suspendedHours / 60 : suspendedHours;
 
-                double suspendedTime = suspendedHours >= 60 ? suspendedHours / 60 : suspendedHours;
+            #region Validation
+            if (user == null)
+            {
+                throw new UnauthorizedAccessException("Username / Password invalid!");
+            }
+            /// If login on suspend
+            else if (user.LOGIN_HOLD > DateTime.Now)
+            {
+                throw new MethodAccessException(string.Format("Your account are suspend for {0} {1}", suspendedTime, suspendedHoursText));
+            }
+            /// If user is null OR wrong password
+            else if (!user.VerifyPassword(password))
+            {
+                /// Set Increment by 1 for LOGIN_FAILED field
+                user.LOGIN_FAILED = user.LOGIN_FAILED + 1;
 
-                #region Validation
-                if (user == null)
+                /// If failed attempt > max failed
+                if (user.LOGIN_FAILED >= maxFailed)
                 {
-                    validationMessage = "Username / Password invalid!";
-                }
-                /// If login on suspend
-                else if (user.LOGIN_HOLD > DateTime.Now)
-                {
-                    validationMessage = string.Format("Your account are suspend for {0} {1}", suspendedTime, suspendedHoursText);
-                }
-                /// If user is null OR wrong password
-                else if (!user.VerifyPassword(login.PASSWORD))
-                {
-                    /// Set Increment by 1 for LOGIN_FAILED field
-                    user.LOGIN_FAILED = user.LOGIN_FAILED + 1;
-
-                    /// If failed attempt > max failed
-                    if (user.LOGIN_FAILED >= maxFailed)
+                    if (suspendedHours >= 60)
                     {
-                        if (suspendedHours >= 60)
-                        {
-                            /// Set LOGIN_HOLD to DateTime.Now + 1 Hour
-                            user.LOGIN_HOLD = DateTime.Now.AddHours(suspendedTime);
-                        }
-                        else
-                        {
-                            /// Set LOGIN_HOLD to DateTime.Now + 1 Hour
-                            user.LOGIN_HOLD = DateTime.Now.AddMinutes(suspendedTime);
-                        }
-
-                        /// Update user
-                        _repository.Update(user);
-                        validationMessage = string.Format("Max login attempt exceeded! Account will suspended for {0} {1}", suspendedTime, suspendedHoursText);
+                        /// Set LOGIN_HOLD to DateTime.Now + 1 Hour
+                        user.LOGIN_HOLD = DateTime.Now.AddHours(suspendedTime);
                     }
                     else
                     {
-                        /// Update user
-                        _repository.Update(user);
-                        validationMessage = "Username / Password invalid!";
+                        /// Set LOGIN_HOLD to DateTime.Now + 1 Hour
+                        user.LOGIN_HOLD = DateTime.Now.AddMinutes(suspendedTime);
                     }
-                }
-                #endregion
-
-                if (validationMessage == "")
-                {
-                    string pinStatus = "false";
-
-                    // VALIDATE pin if empty or null then return false other than that true
-                    if (user.PIN == "") pinStatus = "false";
-                    else if (user.PIN == null) pinStatus = "false";
-                    else pinStatus = "true";
-
-                    claims.Add(new Claim(ClaimTypes.Role, user.USER_TYPE.ToString()));
-                    claims.Add(new Claim(ClaimTypes.Name, user.USERNAME));
-                    claims.Add(new Claim("pin_status", pinStatus));
-
-                    var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
-
-                    var token = new JwtSecurityToken(
-                        issuer: _configuration["JWT:Issuer"],
-                        audience: _configuration["JWT:Audience"],
-                        expires: DateTime.Now.AddMinutes(15),
-                        claims: claims,
-                        signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
-                        );
-
-                    /// Once login success, reset Login Attempt to 0 
-                    user.LOGIN_FAILED = 0;
 
                     /// Update user
                     _repository.Update(user);
-
-                    return Ok(new JwtSecurityTokenHandler().WriteToken(token));
+                    throw new UnauthorizedAccessException(string.Format("Max login attempt exceeded! Account will suspended for {0} {1}", suspendedTime, suspendedHoursText));
                 }
                 else
                 {
-                    return Unauthorized(validationMessage);
+                    /// Update user
+                    _repository.Update(user);
+                    throw new UnauthorizedAccessException("Username / Password invalid!");
                 }
             }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message.ToString());
-            }
+            #endregion
+
+            return user;
+        }
+
+        private string GenerateJWTToken(User user) {
+            string pinStatus = "false";
+
+            // VALIDATE pin if empty or null then return false other than that true
+            if (user.PIN == "") pinStatus = "false";
+            else if (user.PIN == null) pinStatus = "false";
+            else pinStatus = "true";
+
+            var claims = new List<Claim>();
+            claims.Add(new Claim(ClaimTypes.Role, user.USER_TYPE.ToString()));
+            claims.Add(new Claim(ClaimTypes.Name, user.USERNAME));
+            claims.Add(new Claim("pin_status", pinStatus));
+
+            var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["JWT:Issuer"],
+                audience: _configuration["JWT:Audience"],
+                expires: DateTime.Now.AddMinutes(15),
+                claims: claims,
+                signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
+            );
+
+            /// Once login success, reset Login Attempt to 0 
+            user.LOGIN_FAILED = 0;
+
+            /// Update user
+            _repository.Update(user);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         [HttpPost]
