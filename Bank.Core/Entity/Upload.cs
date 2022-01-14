@@ -46,8 +46,6 @@ namespace Bank.Core.Entity
             byte[] videoBytes = Convert.FromBase64String(stringVideo);
             MemoryStream msVideo = new MemoryStream(videoBytes);
             uploadedVideo = new FormFile(msVideo, 0, videoBytes.Length, videoName, videoName);
-
-
         }
 
         public void doUpload(string maxPictureSize, string maxVideoSize)
@@ -92,7 +90,6 @@ namespace Bank.Core.Entity
             {
                 return "File Kebesaran";
             }
-
             else
             {
                 string fileName = file.FileName;
@@ -113,10 +110,9 @@ namespace Bank.Core.Entity
                     return true;
                 }
             }
+
             return false;
         }
-
     }
-
 }
 

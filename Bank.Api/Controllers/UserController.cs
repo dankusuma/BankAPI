@@ -126,8 +126,8 @@ namespace Bank.Api.Controllers
                 /// Get setting
                 var setting = _repository.List<RefMaster>(null).FindAll(x => x.MASTER_GROUP == "SETTING");
 
-                /// Get user list
-                var user = _repository.List<User>(null).Find(x => x.USERNAME == login.USERNAME);
+            /// Maximum failed login attempt
+            int maxFailed = int.Parse(setting.Find(x => x.MASTER_CODE == "MAX_LOGIN").VALUE);
 
                 /// Maximum failed login attempt
                 int maxFailed = int.Parse(setting.Find(x => x.MASTER_CODE == "MAX_LOGIN").VALUE);

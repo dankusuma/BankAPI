@@ -71,7 +71,7 @@ namespace Bank.Core.Entity
                 throw new ArgumentException("VIDEO link is not valid!");
             }
             if (string.IsNullOrEmpty(USER_TYPE) || USER_TYPE.Length > 20)
-            {
+            { 
                 throw new ArgumentException("user role is not valid!");
             }
             if (!NIK.All(char.IsDigit) || NIK.Length != 16)
