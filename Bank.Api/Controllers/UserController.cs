@@ -54,7 +54,7 @@ namespace Bank.Api.Controllers
         [HttpPost]
         public IActionResult isUserDuplicate(Validate val)
         {
-            if (_repository.List<User>(null).Exists(x => x.USERNAME != val.USERNAME))
+            if (_repository.List<User>(null).Exists(x => x.USERNAME == val.USERNAME))
             {
                 return BadRequest();
             }
