@@ -46,8 +46,8 @@ namespace Bank.Core.Entity
                 if (NEW_PIN.Length < 6) return "Pin too short. Only accept 6 digit numbers";
                 if (NEW_PIN.Length > 6) return "Pin too long. Only accept 6 digit numbers";
                 if (NEW_PIN == dob1 || NEW_PIN == dob2) return "Please do not use your Date of Birth (DOB)";
-                if (NEW_PIN is "123456" or "654321") return "Please DO NOT use \"123456\" or \"654321\" and the other general number as your pin";
-                if (NEW_PIN == PIN) return "New pin must be different from the old one.";
+                if (NEW_PIN is "123456" or "654321") return "Please DO NOT use \"123456\" or \"654321\" and the other general number as your pin"; 
+                if (HashPIN(NEW_PIN) == user.PIN) return "New pin must be different from the old one.";
             }
 
             return "";
