@@ -12,7 +12,6 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Linq;
-using System.Net.Mail;
 using System.Security.Claims;
 using System.Text;
 
@@ -53,11 +52,11 @@ namespace Bank.Api.Controllers
         }
 
         [HttpPost]
-        public IActionResult isUserDuplicate(Validate username)
+        public IActionResult isUserDuplicate(Validate val)
         {
-            if (_repository.List<User>().Exists(x => x.USERNAME == username.USERNAME))
+            if (_repository.List<User>(null).Exists(x => x.USERNAME != val.USERNAME))
             {
-                return BadRequest("Duplicate Username");
+                return Unauthorized("Duplicate Username");
             }
             else
             {
@@ -66,29 +65,37 @@ namespace Bank.Api.Controllers
         }
 
         [HttpPost]
-        public IActionResult isEmailDuplicate(Validate email)
+        public IActionResult isEmailDuplicate(Validate val)
         {
-            if (_repository.List<User>(null).Exists(x => x.USERNAME == username))
+            if (_repository.List<User>(null).Exists(x => x.USERNAME == val.EMAIL))
             {
-                return Ok();
+                return Unauthorized("Duplicate Email");
+            }
+            else
+            {
+                return Ok("Success");
             }
         }
 
         [HttpPost]
-        public IActionResult isPhoneDuplicate(Validate phone)
+        public IActionResult isPhoneDuplicate(Validate val)
         {
-            if (_repository.List<User>(null).Exists(x => x.EMAIL == email))
+            if (_repository.List<User>(null).Exists(x => x.PHONE == val.PHONE))
             {
-                return Ok();
+                return Unauthorized("Duplicate Phone Number");
+            }
+            else
+            {
+                return Ok("Success");
             }
         }
 
         [HttpPost]
-        public IActionResult isNIKDuplicate(Validate nik)
+        public IActionResult isNIKDuplicate(Validate val)
         {
-            if (_repository.List<User>().Exists(x => x.NIK == nik.NIK))
+            if (_repository.List<User>(null).Exists(x => x.NIK == val.NIK))
             {
-                return BadRequest();
+                return Unauthorized("Duplicate NIK");
             }
             else
             {
@@ -190,7 +197,8 @@ namespace Bank.Api.Controllers
             return user;
         }
 
-        private string GenerateJWTToken(User user) {
+        private string GenerateJWTToken(User user)
+        {
             string pinStatus = "false";
 
             // VALIDATE pin if empty or null then return false other than that true
