@@ -235,112 +235,113 @@ namespace Bank.Api.Controllers
         public IActionResult ForgotPassword(ForgotPassword forgotPassword)
         {
             string validationMessage = "";
+
+            validationMessage = IsEmailValid(forgotPassword);
+            if (validationMessage != "") throw new UnauthorizedAccessException(validationMessage);
+            var user = _repository.List<User>(null).Find(x => x.EMAIL == forgotPassword.EMAIL);
+
+            validationMessage = IsEmailExists(user);
+            if (validationMessage != "") throw new UnauthorizedAccessException(validationMessage);
+
+            return Ok(GenerateEmail(user, forgotPassword));
+        }
+
+        public string IsEmailValid(ForgotPassword forgotPassword)
+        {
+            if (forgotPassword.EMAIL == "") return "Can't fill in an empty email";
+            else if (!forgotPassword.ValidateEmail()) return "Incorrect email format";
+            else return "";
+        }
+
+        public string IsEmailExists(User user)
+        {
+            if (user == null) return "Unregistered email";
+            else if (user.EMAIL == "" || user.EMAIL == null) return "Unregistered email";
+            else return "";
+        }
+
+        public string GenerateEmail(User user, ForgotPassword forgotPassword)
+        {
+            /// Get setting
+            var mailSetting = _repository.List<RefMaster>(null).FindAll(x => x.MASTER_GROUP == "EMAIL");
+
+            /// Email
+            string username = user.USERNAME.Trim();
+            string userHash = user.HashValue(username);
+            string userHashExpiration = DateTime.Now.AddMinutes(15).ToString("yyyyMMddHHmm");
+            string mailTo = forgotPassword.EMAIL;
+            string mailFrom = mailSetting.Find(x => x.MASTER_CODE == "MAIL_FROM").VALUE;
+            string mailFromPassword = mailSetting.Find(x => x.MASTER_CODE == "MAIL_FROM_PASSWORD").VALUE;
+            string mailSubject = mailSetting.Find(x => x.MASTER_CODE == "MAIL_SUBJECT_RESET").VALUE;
+            string mailBodyTemplatePath = mailSetting.Find(x => x.MASTER_CODE == "MAIL_BODY_TEMPLATE_PATH").VALUE;
+            string mailLink = mailSetting.Find(x => x.MASTER_CODE == "MAIL_LINK").VALUE;
+            string mailSignature = mailSetting.Find(x => x.MASTER_CODE == "MAIL_SIGNATURE").VALUE;
+
+            /// Update CHANGE_PASSWORD_TOKEN field with new hash
+            user.CHANGE_PASSWORD_TOKEN = userHash;
+            user.CHANGE_PASSWORD_TOKEN_EXPIRATION = userHashExpiration;
+
+            /// Update user
+            _repository.Update(user);
+
+            /// Path
+            string templatePath;
+            string MailText = "";
             try
-            {
-                #region Validation 1
-                if (forgotPassword.EMAIL == "") validationMessage = "Can't fill in an empty email";
-                else if (!forgotPassword.ValidateEmail()) validationMessage = "Incorrect email format";
-                #endregion
-
-                if (validationMessage == "")
-                {
-                    var user = _repository.List<User>(null).Find(x => x.EMAIL == forgotPassword.EMAIL);
-
-                    #region Validation 2
-                    if (user == null) validationMessage = "Unregistered email";
-                    else if (user.EMAIL == "" || user.EMAIL == null) validationMessage = "Unregistered email";
-                    #endregion
-
-                    if (validationMessage == "")
-                    {
-                        #region Send Mail
-                        /// Get setting
-                        var mailSetting = _repository.List<RefMaster>(null).FindAll(x => x.MASTER_GROUP == "EMAIL");
-
-                        /// Email
-                        string username = user.USERNAME.Trim();
-                        string userHash = user.HashValue(username);
-                        string userHashExpiration = DateTime.Now.AddMinutes(15).ToString("yyyyMMddHHmm");
-                        string mailTo = forgotPassword.EMAIL;
-                        string mailFrom = mailSetting.Find(x => x.MASTER_CODE == "MAIL_FROM").VALUE;
-                        string mailFromPassword = mailSetting.Find(x => x.MASTER_CODE == "MAIL_FROM_PASSWORD").VALUE;
-                        string mailSubject = mailSetting.Find(x => x.MASTER_CODE == "MAIL_SUBJECT_RESET").VALUE;
-                        string mailBodyTemplatePath = mailSetting.Find(x => x.MASTER_CODE == "MAIL_BODY_TEMPLATE_PATH").VALUE;
-                        string mailLink = mailSetting.Find(x => x.MASTER_CODE == "MAIL_LINK").VALUE;
-                        string mailSignature = mailSetting.Find(x => x.MASTER_CODE == "MAIL_SIGNATURE").VALUE;
-
-                        /// Update CHANGE_PASSWORD_TOKEN field with new hash
-                        user.CHANGE_PASSWORD_TOKEN = userHash;
-                        user.CHANGE_PASSWORD_TOKEN_EXPIRATION = userHashExpiration;
-
-                        /// Update user
-                        _repository.Update(user);
-
-                        /// Path
-                        string templatePath = Directory.GetCurrentDirectory() + mailBodyTemplatePath;
-                        StreamReader str = new StreamReader(templatePath);
-                        string MailText = str.ReadToEnd();
-                        str.Close();
-
-                        /// Set Username
-                        MailText = MailText.Replace("[username]", username);
-                        /// Set Link
-                        MailText = MailText.Replace("[link]", string.Format(mailLink, username, userHash, userHashExpiration));
-                        /// Set Username
-                        MailText = MailText.Replace("[teamname]", mailSignature);
-                        /// Set Body Text
-                        string mailBody = MailText;
-
-                        /// SMTP
-                        string smtpServer = mailSetting.Find(x => x.MASTER_CODE == "SMTP_SERVER").VALUE;
-                        int smtpPort = int.Parse(mailSetting.Find(x => x.MASTER_CODE == "SMTP_PORT").VALUE);
-                        bool smtpSSL = mailSetting.Find(x => x.MASTER_CODE == "SMTP_SSL").VALUE == "true" ? true : false;
-                        bool smtpDefaultCredentials = mailSetting.Find(x => x.MASTER_CODE == "SMTP_DEFAULT_CREDENTIALS").VALUE == "true" ? true : false;
-
-                        #region New SMTP Email Setting
-                        var client = new MailKit.Net.Smtp.SmtpClient();
-                        client.Connect(smtpServer, smtpPort, true);
-
-                        /// Note: since we don't have an OAuth2 token, disable the XOAUTH2 authentication mechanism.
-                        client.AuthenticationMechanisms.Remove("XOAUTH2");
-
-                        /// Note: only needed if the SMTP server requires authentication
-                        client.Authenticate(mailFrom, mailFromPassword);
-
-                        var msg = new MimeMessage();
-                        msg.From.Add(new MailboxAddress("Mail system", mailFrom));
-                        msg.To.Add(new MailboxAddress("Dear user", mailTo));
-                        msg.Subject = mailSubject;
-
-                        var bodyBuilder = new BodyBuilder
-                        {
-                            HtmlBody = mailBody,
-                            TextBody = "Test"
-                        };
-
-                        msg.Body = bodyBuilder.ToMessageBody();
-
-                        client.Send(msg);
-                        client.Disconnect(true);
-                        #endregion
-
-                        return Ok(string.Format("Email sent to {0} successfully", forgotPassword.EMAIL));
-                        #endregion
-                    }
-                    else
-                    {
-                        return Unauthorized(validationMessage);
-                    }
-                }
-                else
-                {
-                    return BadRequest(validationMessage);
-                }
+            { 
+                templatePath= Directory.GetCurrentDirectory() + mailBodyTemplatePath;
+                StreamReader str = new StreamReader(templatePath);
+                MailText = str.ReadToEnd();
+                str.Close();
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                return BadRequest(ex.Message.ToString());
+                Console.WriteLine(e.Message);
             }
+
+            /// Set Username
+            MailText = MailText.Replace("[username]", username);
+            /// Set Link
+            MailText = MailText.Replace("[link]", string.Format(mailLink, username, userHash, userHashExpiration));
+            /// Set Username
+            MailText = MailText.Replace("[teamname]", mailSignature);
+            /// Set Body Text
+            string mailBody = MailText;
+
+            /// SMTP
+            string smtpServer = mailSetting.Find(x => x.MASTER_CODE == "SMTP_SERVER").VALUE;
+            int smtpPort = int.Parse(mailSetting.Find(x => x.MASTER_CODE == "SMTP_PORT").VALUE);
+            bool smtpSSL = mailSetting.Find(x => x.MASTER_CODE == "SMTP_SSL").VALUE == "true" ? true : false;
+            bool smtpDefaultCredentials = mailSetting.Find(x => x.MASTER_CODE == "SMTP_DEFAULT_CREDENTIALS").VALUE == "true" ? true : false;
+
+            #region New SMTP Email Setting
+            var client = new MailKit.Net.Smtp.SmtpClient();
+            client.Connect(smtpServer, smtpPort, true);
+
+            /// Note: since we don't have an OAuth2 token, disable the XOAUTH2 authentication mechanism.
+            client.AuthenticationMechanisms.Remove("XOAUTH2");
+
+            /// Note: only needed if the SMTP server requires authentication
+            client.Authenticate(mailFrom, mailFromPassword);
+
+            var msg = new MimeMessage();
+            msg.From.Add(new MailboxAddress("Mail system", mailFrom));
+            msg.To.Add(new MailboxAddress("Dear user", mailTo));
+            msg.Subject = mailSubject;
+
+            var bodyBuilder = new BodyBuilder
+            {
+                HtmlBody = mailBody,
+                TextBody = "Test"
+            };
+
+            msg.Body = bodyBuilder.ToMessageBody();
+
+            client.Send(msg);
+            client.Disconnect(true);
+            #endregion
+
+            return string.Format("Email sent to {0} successfully", forgotPassword.EMAIL);
         }
 
         [HttpPost]

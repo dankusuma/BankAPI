@@ -50,7 +50,6 @@ namespace UnitTest.UserController_Test
             var repo = A.Fake<IRepository>();
             var controller = new UserController(repo, _config);
 
-
             A.CallTo(() => repo.Update(_user)).DoesNothing();
             A.CallTo(() => repo.List<User>(null)).Returns(GetDummyHashedUser());
             A.CallTo(() => repo.List<RefMaster>(null)).Returns(_refMasterDummyList);

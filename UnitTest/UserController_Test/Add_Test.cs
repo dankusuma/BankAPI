@@ -13,7 +13,6 @@ namespace UnitTest.UserController_Test
 {
     public class Add_Test
     {
-
         [Test]
         public void AddUser_Success()
         {
