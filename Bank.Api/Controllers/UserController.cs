@@ -56,11 +56,11 @@ namespace Bank.Api.Controllers
         {
             if (_repository.List<User>(null).Exists(x => x.USERNAME != val.USERNAME))
             {
-                return Unauthorized("Duplicate Username");
+                return BadRequest();
             }
             else
             {
-                return Ok("Success");
+                return Ok();
             }
         }
 
