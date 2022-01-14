@@ -69,7 +69,7 @@ namespace Bank.Api.Controllers
         {
             if (_repository.List<User>(null).Exists(x => x.USERNAME == val.EMAIL))
             {
-                return Unauthorized();
+                return BadRequest();
             }
             else
             {
@@ -82,7 +82,7 @@ namespace Bank.Api.Controllers
         {
             if (_repository.List<User>(null).Exists(x => x.PHONE == val.PHONE))
             {
-                return Unauthorized();
+                return BadRequest();
             }
             else
             {
@@ -95,7 +95,7 @@ namespace Bank.Api.Controllers
         {
             if (_repository.List<User>(null).Exists(x => x.NIK == val.NIK))
             {
-                return Unauthorized();
+                return BadRequest();
             }
             else
             {
