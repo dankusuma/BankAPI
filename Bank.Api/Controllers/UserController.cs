@@ -133,6 +133,7 @@ namespace Bank.Api.Controllers
             return Ok(GenerateJWTToken(user));
         }
 
+        [HttpPost]
         public User VerifyUser(string username, string password)
         {
             /// Get setting
