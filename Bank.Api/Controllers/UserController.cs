@@ -67,7 +67,7 @@ namespace Bank.Api.Controllers
         [HttpPost]
         public IActionResult isEmailDuplicate(Validate val)
         {
-            if (_repository.List<User>(null).Exists(x => x.USERNAME == val.EMAIL))
+            if (_repository.List<User>(null).Exists(x => x.EMAIL == val.EMAIL))
             {
                 return BadRequest();
             }
