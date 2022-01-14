@@ -243,25 +243,6 @@ namespace Bank.Api.Controllers
             validationMessage = IsEmailExists(user);
             if (validationMessage != "") throw new UnauthorizedAccessException(validationMessage);
 
-            return Ok(GenerateEmail(user, forgotPassword));
-        }
-
-        public string IsEmailValid(ForgotPassword forgotPassword)
-        {
-            if (forgotPassword.EMAIL == "") return "Can't fill in an empty email";
-            else if (!forgotPassword.ValidateEmail()) return "Incorrect email format";
-            else return "";
-        }
-
-        public string IsEmailExists(User user)
-        {
-            if (user == null) return "Unregistered email";
-            else if (user.EMAIL == "" || user.EMAIL == null) return "Unregistered email";
-            else return "";
-        }
-
-        public string GenerateEmail(User user, ForgotPassword forgotPassword)
-        {
             /// Get setting
             var mailSetting = _repository.List<RefMaster>(null).FindAll(x => x.MASTER_GROUP == "EMAIL");
 
@@ -288,8 +269,8 @@ namespace Bank.Api.Controllers
             string templatePath;
             string MailText = "";
             try
-            { 
-                templatePath= Directory.GetCurrentDirectory() + mailBodyTemplatePath;
+            {
+                templatePath = Directory.GetCurrentDirectory() + mailBodyTemplatePath;
                 StreamReader str = new StreamReader(templatePath);
                 MailText = str.ReadToEnd();
                 str.Close();
@@ -341,7 +322,21 @@ namespace Bank.Api.Controllers
             client.Disconnect(true);
             #endregion
 
-            return string.Format("Email sent to {0} successfully", forgotPassword.EMAIL);
+            return Ok(string.Format("Email sent to {0} successfully", forgotPassword.EMAIL));
+        }
+
+        public string IsEmailValid(ForgotPassword forgotPassword)
+        {
+            if (forgotPassword.EMAIL == "") return "Can't fill in an empty email";
+            else if (!forgotPassword.ValidateEmail()) return "Incorrect email format";
+            else return "";
+        }
+
+        public string IsEmailExists(User user)
+        {
+            if (user == null) return "Unregistered email";
+            else if (user.EMAIL == "" || user.EMAIL == null) return "Unregistered email";
+            else return "";
         }
 
         [HttpPost]
