@@ -69,11 +69,11 @@ namespace Bank.Api.Controllers
         {
             if (_repository.List<User>(null).Exists(x => x.USERNAME == val.EMAIL))
             {
-                return Unauthorized("Duplicate Email");
+                return Unauthorized();
             }
             else
             {
-                return Ok("Success");
+                return Ok();
             }
         }
 
@@ -82,11 +82,11 @@ namespace Bank.Api.Controllers
         {
             if (_repository.List<User>(null).Exists(x => x.PHONE == val.PHONE))
             {
-                return Unauthorized("Duplicate Phone Number");
+                return Unauthorized();
             }
             else
             {
-                return Ok("Success");
+                return Ok();
             }
         }
 
@@ -95,7 +95,7 @@ namespace Bank.Api.Controllers
         {
             if (_repository.List<User>(null).Exists(x => x.NIK == val.NIK))
             {
-                return Unauthorized("Duplicate NIK");
+                return Unauthorized();
             }
             else
             {
