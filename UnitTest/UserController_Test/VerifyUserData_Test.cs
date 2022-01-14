@@ -11,42 +11,40 @@ namespace UnitTest.UserController_Test
 {
     public class VerifyUserData_Test
     {
-
-
         [Test]
-        public void IsEmailDuplicate_ReturnFalse()
+        public void IsEmailDuplicate_ReturnOk()
         {
             var config = A.Fake<IConfiguration>();
             var repo = A.Fake<IRepository>();
-            var user = GetDummyUser()[0];
 
             A.CallTo(() => repo.List<User>(null))
                 .Returns(GetDummyUser());
 
             var controller = new UserController(repo, config);
-
-            var result = controller.isEmailDuplicate(user.EMAIL);
-            Assert.IsInstanceOf<UnauthorizedObjectResult>(result);
+            var validate = new Validate();
+            validate.EMAIL = "hendradummy@gmail.com";
+            var result = controller.isEmailDuplicate(validate);
+            Assert.IsInstanceOf<OkResult>(result);
         }
 
         [Test]
-        public void IsEmailDuplicate_ReturnTrue()
+        public void IsEmailDuplicate_ReturnBadRequest()
         {
             var config = A.Fake<IConfiguration>();
             var repo = A.Fake<IRepository>();
-            var email = "dummy@dummy.com";
 
             A.CallTo(() => repo.List<User>(null))
                 .Returns(GetDummyUser());
 
             var controller = new UserController(repo, config);
-
-            var result = controller.isEmailDuplicate(email);
-            Assert.IsInstanceOf<OkObjectResult>(result);
+            var validate = new Validate();
+            validate.EMAIL = "dummy1@dummy.com";
+            var result = controller.isEmailDuplicate(validate);
+            Assert.IsInstanceOf<BadRequestResult>(result);
         }
 
         [Test]
-        public void IsUsernameDuplicate_ReturnTrue()
+        public void IsUsernameDuplicate_ReturnOk()
         {
             var config = A.Fake<IConfiguration>();
             var repo = A.Fake<IRepository>();
@@ -55,15 +53,13 @@ namespace UnitTest.UserController_Test
                 .Returns(GetDummyUser());
 
             var controller = new UserController(repo, config);
-
-            var result = controller.isUserDuplicate("Dummy Dummy");
-            Assert.IsInstanceOf<OkObjectResult>(result);
+            var validate = new Validate();
+            validate.USERNAME = "hendratest";
+            var result = controller.isUserDuplicate(validate);
+            Assert.IsInstanceOf<OkResult>(result);
         }
-
-        [TestCase("dummyUser")]
-        [TestCase("dummyUser1")]
-        [TestCase("dummyUser2")]
-        public void IsUsernameDuplicate_ReturnFalse(string username)
+        [Test]
+        public void IsUsernameDuplicate_ReturnBadRequest()
         {
             var config = A.Fake<IConfiguration>();
             var repo = A.Fake<IRepository>();
@@ -72,10 +68,74 @@ namespace UnitTest.UserController_Test
                 .Returns(GetDummyUser());
 
             var controller = new UserController(repo, config);
-
-            var result = controller.isUserDuplicate(username);
-            Assert.IsInstanceOf<UnauthorizedObjectResult>(result);
+            var validate = new Validate();
+            validate.USERNAME = "dummyUser";
+            var result = controller.isUserDuplicate(validate);
+            Assert.IsInstanceOf<BadRequestResult>(result);
         }
+
+        [Test]
+        public void IsNIKDuplicate_ReturnOk()
+        {
+            var config = A.Fake<IConfiguration>();
+            var repo = A.Fake<IRepository>();
+
+            A.CallTo(() => repo.List<User>(null))
+                .Returns(GetDummyUser());
+
+            var controller = new UserController(repo, config);
+            var validate = new Validate();
+            validate.NIK = "1111111111111111";
+            var result = controller.isNIKDuplicate(validate);
+            Assert.IsInstanceOf<OkResult>(result);
+        }
+        [Test]
+        public void IsNIKDuplicate_ReturnBadRequest()
+        {
+            var config = A.Fake<IConfiguration>();
+            var repo = A.Fake<IRepository>();
+
+            A.CallTo(() => repo.List<User>(null))
+                .Returns(GetDummyUser());
+
+            var controller = new UserController(repo, config);
+            var validate = new Validate();
+            validate.NIK = "1234567891012131";
+            var result = controller.isNIKDuplicate(validate);
+            Assert.IsInstanceOf<BadRequestResult>(result);
+        }
+
+        [Test]
+        public void IsPhoneDuplicate_ReturnOk()
+        {
+            var config = A.Fake<IConfiguration>();
+            var repo = A.Fake<IRepository>();
+
+            A.CallTo(() => repo.List<User>(null))
+                .Returns(GetDummyUser());
+
+            var controller = new UserController(repo, config);
+            var validate = new Validate();
+            validate.PHONE = "0811111111";
+            var result = controller.isPhoneDuplicate(validate);
+            Assert.IsInstanceOf<OkResult>(result);
+        }
+        [Test]
+        public void IsPhoneDuplicate_ReturnBadRequest()
+        {
+            var config = A.Fake<IConfiguration>();
+            var repo = A.Fake<IRepository>();
+
+            A.CallTo(() => repo.List<User>(null))
+                .Returns(GetDummyUser());
+
+            var controller = new UserController(repo, config);
+            var validate = new Validate();
+            validate.PHONE = "08123456789";
+            var result = controller.isPhoneDuplicate(validate);
+            Assert.IsInstanceOf<BadRequestResult>(result);
+        }
+
         private List<User> GetDummyUser()
         {
             List<User> dummy = new List<User>()
