@@ -51,23 +51,55 @@ namespace Bank.Api.Controllers
         }
 
         [HttpPost]
-        public IActionResult isUserDuplicate(string username)
+        public IActionResult isUserDuplicate(Validate username)
         {
-            if (_repository.List<User>().Exists(x => x.USERNAME == username))
+            if (_repository.List<User>().Exists(x => x.USERNAME == username.USERNAME))
             {
-                return Unauthorized("Duplicate Username");
+                return BadRequest("Duplicate Username");
             }
-            return Ok("Success");
+            else
+            {
+                return Ok("Success");
+            }
         }
 
         [HttpPost]
-        public IActionResult isEmailDuplicate(string email)
+        public IActionResult isEmailDuplicate(Validate email)
         {
-            if (_repository.List<User>().Exists(x => x.EMAIL == email))
+            if (_repository.List<User>().Exists(x => x.EMAIL == email.EMAIL))
             {
-                return Unauthorized("Duplicate Email");
+                return BadRequest();
             }
-            return Ok("Success");
+            else
+            {
+                return Ok();
+            }
+        }
+
+        [HttpPost]
+        public IActionResult isPhoneDuplicate(Validate phone)
+        {
+            if (_repository.List<User>().Exists(x => x.PHONE == phone.PHONE))
+            {
+                return BadRequest();
+            }
+            else
+            {
+                return Ok();
+            }
+        }
+
+        [HttpPost]
+        public IActionResult isNIKDuplicate(Validate nik)
+        {
+            if (_repository.List<User>().Exists(x => x.NIK == nik.NIK))
+            {
+                return BadRequest();
+            }
+            else
+            {
+                return Ok();
+            }
         }
 
         [HttpPost]
