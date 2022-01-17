@@ -198,6 +198,7 @@ namespace Bank.Api.Controllers
             return user;
         }
 
+        [NonAction]
         private string GenerateJWTToken(User user)
         {
             string pinStatus = "false";
@@ -325,6 +326,7 @@ namespace Bank.Api.Controllers
             return Ok(string.Format("Email sent to {0} successfully", forgotPassword.EMAIL));
         }
 
+        [NonAction]
         public string IsEmailValid(ForgotPassword forgotPassword)
         {
             if (forgotPassword.EMAIL == "") return "Can't fill in an empty email";
@@ -332,6 +334,7 @@ namespace Bank.Api.Controllers
             else return "";
         }
 
+        [NonAction]
         public string IsEmailExists(User user)
         {
             if (user == null) return "Unregistered email";
