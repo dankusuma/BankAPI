@@ -20,8 +20,8 @@ namespace Bank.Core.Entity
         public string PinValidation()
         {
             string yrs = user.BIRTH_DATE.Year.ToString().Substring(2, 2);
-            string mon = user.BIRTH_DATE.Month.ToString();
-            string day = user.BIRTH_DATE.Day.ToString();
+            string mon = user.BIRTH_DATE.Month < 10 ? "0" + user.BIRTH_DATE.Month.ToString() : user.BIRTH_DATE.Month.ToString();
+            string day = user.BIRTH_DATE.Day < 10 ? "0" + user.BIRTH_DATE.Day.ToString() : user.BIRTH_DATE.Day.ToString();
 
             string dob1 = day + mon + yrs;
             string dob2 = yrs + mon + day;
@@ -58,7 +58,8 @@ namespace Bank.Core.Entity
             var sha1 = System.Security.Cryptography.SHA1.Create();
             var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(text));
 
-            return string.Concat(hash.Select(b => b.ToString("x2")));
+            var res = string.Concat(hash.Select(b => b.ToString("x2")));
+            return res;
         }
     }
 }
