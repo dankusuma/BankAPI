@@ -18,6 +18,7 @@ namespace UnitTest.UserController_Test
     {
         private Pin _pin;
         private User _user;
+        private List<User> _listuser;
         public static IConfiguration _config;
         public static IRepository _repo;
         private UserController controller;
@@ -29,6 +30,9 @@ namespace UnitTest.UserController_Test
             _repo = A.Fake<IRepository>();
 
             controller = new UserController(_repo, _config);
+
+            /// Set User List
+            _listuser = GetDummyUser();
 
             /// Set User
             _user = new()
@@ -61,11 +65,42 @@ namespace UnitTest.UserController_Test
             {
                 TOKEN = "",
                 USERNAME = "dummyUser",
-                PIN = "890308",
-                NEW_PIN = "",
+                PIN = "065314",
+                NEW_PIN = "413560",
                 user = new User(),
                 mode = "create",
             };
+        }
+
+        [TestCase("200", "dummyUser")]  // PIN created successfully
+        [TestCase("401", "dummyUserX")] // Username not registered.
+        public void CreatePINTest(string resultCode, string param1)
+        {
+            #region Set Up Param
+            var resultValue = "";
+            /// Set Pin
+            var pin = _pin;
+            pin.USERNAME = param1;
+            pin.mode = "create";
+
+            /// Add list user
+            A.CallTo(() => _repo.List<User>(null)).Returns(GetDummyUser());
+            #endregion
+
+            var result = controller.CreatePIN(_pin);
+
+            if (resultCode == "401")
+            {
+                var x = result as UnauthorizedObjectResult;
+                resultValue = x.StatusCode.ToString();
+            }
+            else if (resultCode == "200")
+            {
+                var x = result as OkObjectResult;
+                resultValue = x.StatusCode.ToString();
+            }
+
+            Assert.AreEqual(resultCode, resultValue);
         }
 
         [TestCase("", "080389")]
@@ -92,6 +127,37 @@ namespace UnitTest.UserController_Test
         }
 
 
+        [TestCase("200", "dummyUser")]  // PIN created successfully
+        [TestCase("401", "dummyUserX")] // Username not registered.
+        public void ChangePINTest(string resultCode, string param1)
+        {
+            #region Set Up Param
+            var resultValue = "";
+            /// Set Pin
+            var pin = _pin;
+            pin.USERNAME = param1;
+            pin.mode = "create";
+
+            /// Add list user
+            A.CallTo(() => _repo.List<User>(null)).Returns(GetDummyUser());
+            #endregion
+
+            var result = controller.ChangePIN(_pin);
+
+            if (resultCode == "401")
+            {
+                var x = result as UnauthorizedObjectResult;
+                resultValue = x.StatusCode.ToString();
+            }
+            else if (resultCode == "200")
+            {
+                var x = result as OkObjectResult;
+                resultValue = x.StatusCode.ToString();
+            }
+
+            Assert.AreEqual(resultCode, resultValue);
+        }
+
         [TestCase("", "080389")]
         [TestCase("Invalid pin", null)]
         [TestCase("Invalid input. Only accept 6 digit numbers", "")]
@@ -114,6 +180,38 @@ namespace UnitTest.UserController_Test
             var res = pin.PinValidation();
 
             Assert.AreEqual(result, res);
+        }
+
+
+        [TestCase("200", "dummyUser")]  // PIN created successfully
+        [TestCase("401", "dummyUserX")] // Username not registered.
+        public void PINStatus(string resultCode, string param1)
+        {
+            #region Set Up Param
+            var resultValue = "";
+            /// Set Pin
+            var pin = _pin;
+            pin.USERNAME = param1;
+            pin.mode = "status";
+
+            /// Add list user
+            A.CallTo(() => _repo.List<User>(null)).Returns(GetDummyUser());
+            #endregion
+
+            var result = controller.PINStatus(_pin);
+
+            if (resultCode == "401")
+            {
+                var x = result as UnauthorizedObjectResult;
+                resultValue = x.StatusCode.ToString();
+            }
+            else if (resultCode == "200")
+            {
+                var x = result as OkObjectResult;
+                resultValue = x.StatusCode.ToString();
+            }
+
+            Assert.AreEqual(resultCode, resultValue);
         }
 
         private List<User> GetDummyUser()
