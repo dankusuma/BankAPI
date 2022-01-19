@@ -145,8 +145,6 @@ namespace Bank.Api.Controllers
                 newUser.Add(user);
             }
 
-            newUser.Sort();
-
             return Ok(newUser);
         }
 
