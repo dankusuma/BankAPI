@@ -126,6 +126,30 @@ namespace Bank.Api.Controllers
             return Ok(print);
         }
 
+        [HttpGet]
+        public IActionResult GetUserData()
+        {
+            List<User> users = _repository.List<User>(null);
+            List<User> newUser = new();
+
+            foreach (var item in users)
+            {
+                User user = new()
+                {
+                    NIK = item.NIK,
+                    USERNAME = item.USERNAME,
+                    EMAIL = item.EMAIL,
+                    PHONE = item.PHONE
+                };
+
+                newUser.Add(user);
+            }
+
+            newUser.Sort();
+
+            return Ok(newUser);
+        }
+
         [HttpPost]
         public IActionResult Authenticate(LoginModel login)
         {
