@@ -57,7 +57,7 @@ namespace UnitTest.UserController_Test
                 VIDEO = "DUMMY VIDEO LINK",
                 USER_TYPE = "user",
                 BIRTH_DATE = new DateTime(2001, 03, 13), // 2001-03-13 00:00:00.000
-                PIN = "309d64ed5d085f26c1998e4827d41c363b5a4e27"
+                PIN = "f82c08b599cd4299be0edc2441c35add3b9b6df6"    // 624351
             };
 
             /// Set Pin
@@ -103,30 +103,6 @@ namespace UnitTest.UserController_Test
             Assert.AreEqual(resultCode, resultValue);
         }
 
-        [TestCase("", "080389")]
-        [TestCase("Invalid pin", null)]
-        [TestCase("Invalid input. Only accept 6 digit numbers", "")]
-        [TestCase("Only accept 6 digit numbers", "12345y")]
-        [TestCase("Pin too short. Only accept 6 digit numbers", "123")]
-        [TestCase("Pin too long. Only accept 6 digit numbers", "1234567")]
-        [TestCase("Please do not use your Date of Birth (DOB)", "130301")]
-        [TestCase("Please do not use your Date of Birth (DOB)", "010313")]
-        [TestCase("Please DO NOT use \"123456\" or \"654321\" and the other general number as your pin", "123456")]
-        [TestCase("Please DO NOT use \"123456\" or \"654321\" and the other general number as your pin", "654321")]
-        public void CreatePINValidation(string result, string PIN)
-        {
-            /// Set Pin
-            var pin = A.Fake<Pin>();
-            pin.mode = "create";
-            pin.PIN = PIN;
-            pin.user = _user;
-
-            var res = pin.PinValidation();
-
-            Assert.AreEqual(result, res);
-        }
-
-
         [TestCase("200", "dummyUser")]  // PIN created successfully
         [TestCase("401", "dummyUserX")] // Username not registered.
         public void ChangePINTest(string resultCode, string param1)
@@ -140,6 +116,7 @@ namespace UnitTest.UserController_Test
 
             /// Add list user
             A.CallTo(() => _repo.List<User>(null)).Returns(GetDummyUser());
+            A.CallTo(() => _repo.List<RefMaster>(null)).Returns(GetRefMasters());
             #endregion
 
             var result = controller.ChangePIN(_pin);
@@ -157,31 +134,6 @@ namespace UnitTest.UserController_Test
 
             Assert.AreEqual(resultCode, resultValue);
         }
-
-        [TestCase("", "080389")]
-        [TestCase("Invalid pin", null)]
-        [TestCase("Invalid input. Only accept 6 digit numbers", "")]
-        [TestCase("Only accept 6 digit numbers", "12345y")]
-        [TestCase("Pin too short. Only accept 6 digit numbers", "123")]
-        [TestCase("Pin too long. Only accept 6 digit numbers", "1234567")]
-        [TestCase("Please do not use your Date of Birth (DOB)", "130301")]
-        [TestCase("Please do not use your Date of Birth (DOB)", "010313")]
-        [TestCase("Please DO NOT use \"123456\" or \"654321\" and the other general number as your pin", "123456")]
-        [TestCase("Please DO NOT use \"123456\" or \"654321\" and the other general number as your pin", "654321")]
-        [TestCase("New pin must be different from the old one.", "890308")]
-        public void ChangePINValidation(string result, string NEW_PIN)
-        {
-            /// Set Pin
-            var pin = A.Fake<Pin>();
-            pin.mode = "change";
-            pin.NEW_PIN = NEW_PIN;
-            pin.user = _user;
-
-            var res = pin.PinValidation();
-
-            Assert.AreEqual(result, res);
-        }
-
 
         [TestCase("200", "dummyUser")]  // PIN created successfully
         [TestCase("401", "dummyUserX")] // Username not registered.
@@ -212,6 +164,133 @@ namespace UnitTest.UserController_Test
             }
 
             Assert.AreEqual(resultCode, resultValue);
+        }
+
+        [TestCase("create", "", "080389")]
+        [TestCase("create", "Invalid pin", null)]
+        [TestCase("create", "Invalid input. Only accept 6 digit numbers", "")]
+        [TestCase("create", "Only accept 6 digit numbers", "12345y")]
+        [TestCase("create", "Pin too short. Only accept 6 digit numbers", "123")]
+        [TestCase("create", "Pin too long. Only accept 6 digit numbers", "1234567")]
+        [TestCase("create", "Please do not use your Date of Birth (DOB)", "130301")]
+        [TestCase("create", "Please do not use your Date of Birth (DOB)", "010313")]
+        [TestCase("create", "Please DO NOT use \"123456\" or \"654321\" and the other general number as your pin", "123456")]
+        [TestCase("create", "Please DO NOT use \"123456\" or \"654321\" and the other general number as your pin", "654321")]
+        [TestCase("change", "New pin must be different from the old one.", "624351")]
+        [TestCase("change", "", "065314")]
+        [TestCase("change", "Invalid pin", null)]
+        [TestCase("change", "Invalid input. Only accept 6 digit numbers", "")]
+        [TestCase("change", "Only accept 6 digit numbers", "12345y")]
+        [TestCase("change", "Pin too short. Only accept 6 digit numbers", "123")]
+        [TestCase("change", "Pin too long. Only accept 6 digit numbers", "1234567")]
+        [TestCase("change", "Please do not use your Date of Birth (DOB)", "130301")]
+        [TestCase("change", "Please do not use your Date of Birth (DOB)", "010313")]
+        [TestCase("change", "Please DO NOT use \"123456\" or \"654321\" and the other general number as your pin", "123456")]
+        [TestCase("change", "Please DO NOT use \"123456\" or \"654321\" and the other general number as your pin", "654321")]
+        public void ValidatePIN(string mode, string expected, string param1)
+        {
+            // ARRANGE
+            _pin.mode = mode;
+            _pin.PIN = param1;
+            _pin.NEW_PIN = param1;
+            _pin.user = _user;
+            /// Add list
+            A.CallTo(() => _repo.List<RefMaster>(null)).Returns(GetRefMasters());
+            A.CallTo(() => _repo.List<User>(null)).Returns(GetDummyUser());
+            // ACT
+            var result = controller.ValidatePIN(_pin);
+            // ASSERT
+            Assert.AreEqual(result, expected);
+        }
+
+        private List<RefMaster> GetRefMasters()
+        {
+            List<RefMaster> refMasters = new()
+            {
+                new RefMaster
+                {
+                    ID = 34,
+                    MASTER_GROUP = "PIN",
+                    MASTER_CODE = "VALIDATION",
+                    MASTER_CODE_DESCRIPTION = "Invalid pin",
+                    VALUE = null,
+                    IS_ACTIVE = true,
+                },
+                new RefMaster
+                {
+                    ID = 35,
+                    MASTER_GROUP = "PIN",
+                    MASTER_CODE = "VALIDATION",
+                    MASTER_CODE_DESCRIPTION = "Invalid input. Only accept 6 digit numbers",
+                    VALUE = "",
+                    IS_ACTIVE = true,
+                },
+                new RefMaster
+                {
+                    ID = 36,
+                    MASTER_GROUP = "PIN",
+                    MASTER_CODE = "FORMAT",
+                    MASTER_CODE_DESCRIPTION = "Please do not use your Date of Birth (DOB)",
+                    VALUE = "yyMMdd",
+                    IS_ACTIVE = true,
+                },
+                new RefMaster
+                {
+                    ID = 37,
+                    MASTER_GROUP = "PIN",
+                    MASTER_CODE = "FORMAT",
+                    MASTER_CODE_DESCRIPTION = "Please do not use your Date of Birth (DOB)",
+                    VALUE = "ddMMyy",
+                    IS_ACTIVE = true,
+                },
+                new RefMaster
+                {
+                    ID = 38,
+                    MASTER_GROUP = "PIN",
+                    MASTER_CODE = "FORMAT",
+                    MASTER_CODE_DESCRIPTION = "Please do not use your Date of Birth (DOB)",
+                    VALUE = "MMyyyy",
+                    IS_ACTIVE = true,
+                },
+                new RefMaster
+                {
+                    ID = 39,
+                    MASTER_GROUP = "PIN",
+                    MASTER_CODE = "FORMAT",
+                    MASTER_CODE_DESCRIPTION = "Please do not use your Date of Birth (DOB)",
+                    VALUE = "yyyyMM",
+                    IS_ACTIVE = true,
+                },
+                new RefMaster
+                {
+                    ID = 40,
+                    MASTER_GROUP = "PIN",
+                    MASTER_CODE = "FORMAT",
+                    MASTER_CODE_DESCRIPTION = "Please DO NOT use \"123456\" or \"654321\" and the other general number as your pin",
+                    VALUE = "123456",
+                    IS_ACTIVE = true,
+                },
+                new RefMaster
+                {
+                    ID = 41,
+                    MASTER_GROUP = "PIN",
+                    MASTER_CODE = "FORMAT",
+                    MASTER_CODE_DESCRIPTION = "Please DO NOT use \"123456\" or \"654321\" and the other general number as your pin",
+                    VALUE = "654321",
+                    IS_ACTIVE = true,
+                },
+                new RefMaster
+                {
+                    ID = 42,
+                    MASTER_GROUP = "PIN",
+                    MASTER_CODE = "LENGTH",
+                    MASTER_CODE_DESCRIPTION = "PIN Length",
+                    VALUE = "6",
+                    IS_ACTIVE = true,
+                }
+            };
+
+            return refMasters;
         }
 
         private List<User> GetDummyUser()
