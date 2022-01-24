@@ -23,10 +23,16 @@ namespace Bank.Api.Controllers
     {
         private readonly IRepository _repository;
         private readonly IConfiguration _configuration;
+        private List<User> _users;
+        private List<RefMaster> _refMasters;
+
         public UserController(IRepository repository, IConfiguration configuration)
         {
             _repository = repository;
             _configuration = configuration;
+
+            _users = _repository.List<User>(null);
+            _refMasters = _repository.List<RefMaster>(null);
         }
 
         [HttpPost]
@@ -423,33 +429,96 @@ namespace Bank.Api.Controllers
             }
         }
 
+        [NonAction]
+        public string ValidatePIN(Pin pin)
+        {
+            #region ARRANGE
+            /// Check the mode if create then use a PIN if change then use NEW_PIN
+            string value = pin.mode == "create" ? pin.PIN : pin.NEW_PIN;
+
+            /// Get list of validation from REFF_MASTER
+            var validationList = _refMasters.FindAll(x => x.MASTER_GROUP == "PIN");
+
+            /// Get list for FORMAT check based from validationList
+            var formatVal = validationList.Where(x => x.MASTER_CODE == "FORMAT").ToList();
+
+            // Get PIN Length SETTING
+            int len = int.Parse(validationList.Where(x => x.MASTER_CODE == "LENGTH").SingleOrDefault().VALUE);
+            #endregion
+
+            #region Validate
+            /// RETURN Unauthorized when username NOT FOUND
+            if (pin.user == null) return "Username not registered.";
+
+            /// If mode equal status just return empty
+            if (pin.mode == "status") return "";
+
+            /// Find values into the validation list if it is not found it will return null
+            var reffList = validationList.FindAll(x => x.MASTER_CODE != "FORMAT" && x.VALUE == value).SingleOrDefault();
+
+            /// If the data is returned null then the process will continue but if it is not null then the result will be returned
+            if (reffList != null) return reffList.MASTER_CODE_DESCRIPTION;
+
+            if (value.Length < len) return "Pin too short. Only accept 6 digit numbers";
+            if (value.Length > len) return "Pin too long. Only accept 6 digit numbers";
+
+            if (!value.All(char.IsNumber)) return "Only accept 6 digit numbers";
+
+            if (pin.mode == "create")
+            {
+                pin.user.PIN = pin.HashPIN(pin.PIN);
+            }
+            /// For change mode there is 1 additional validation that checks whether NEW_PIN equals PIN
+            else if (pin.mode == "change")
+            {
+                string newPin = pin.HashPIN(pin.NEW_PIN);
+                if (pin.user.PIN == newPin)
+                {
+                    return "New pin must be different from the old one.";
+                }
+                else
+                {
+                    pin.user.PIN = newPin;
+                }
+            }
+
+            foreach (var item in formatVal)
+            {
+                string dt = pin.user.BIRTH_DATE.ToString(item.VALUE);
+                if (value == dt) return item.MASTER_CODE_DESCRIPTION;
+            }
+            #endregion
+
+            /// Validate format
+            #region Validate Format
+            #endregion
+
+            return "";
+        }
+
         [HttpPost]
         public IActionResult CreatePIN(Pin pin)
         {
-            string validationMessage = "";
             pin.mode = "create";
 
             try
             {
                 /// GET user data
-                User user = _repository.List<User>(null).Find(x => x.USERNAME == pin.USERNAME);
-
-                /// RETURN Unauthorized when username NOT FOUND
-                if (user == null) return Unauthorized("Username not registered.");
+                User user = _users.Find(x => x.USERNAME == pin.USERNAME);
 
                 /// SET user to pin model for validation
                 pin.user = user;
 
                 /// Validation for PIN
-                validationMessage = pin.PinValidation();
+                string validationMessage = ValidatePIN(pin);
 
                 if (validationMessage == "")
                 {
                     /// IF no error found CREATE pin hash
-                    user.PIN = pin.HashPIN(pin.PIN);
+                    pin.user.PIN = pin.HashPIN(pin.PIN);
 
                     /// UPDATE data to user
-                    _repository.Update(user);
+                    _repository.Update(pin.user);
 
                     return Ok("PIN created successfully. Please re-login");
                 }
@@ -467,29 +536,23 @@ namespace Bank.Api.Controllers
         [HttpPost]
         public IActionResult ChangePIN(Pin pin)
         {
-            string validationMessage = "";
             pin.mode = "change";
 
             try
             {
-                /// Get OLD password using USERNAME
-                User user = _repository.List<User>(null).Find(x => x.USERNAME == pin.USERNAME);
-
-                /// RETURN Unauthorized when username NOT FOUND
-                if (user == null) return Unauthorized("Username not registered.");
+                /// GET user data
+                User user = _users.Find(x => x.USERNAME == pin.USERNAME);
 
                 /// SET user to pin model for validation
                 pin.user = user;
 
                 /// Validation for PIN
-                validationMessage = pin.PinValidation();
+                string validationMessage = ValidatePIN(pin);
 
                 if (validationMessage == "")
                 {
-                    user.PIN = pin.HashPIN(pin.NEW_PIN);
-
                     /// Update user
-                    _repository.Update(user);
+                    _repository.Update(pin.user);
 
                     return Ok("Password updated successfully");
                 }
@@ -513,23 +576,21 @@ namespace Bank.Api.Controllers
 
             try
             {
-                /// Get OLD password using USERNAME
-                User user = _repository.List<User>(null).Find(x => x.USERNAME == pin.USERNAME);
-
-                /// RETURN Unauthorized when username NOT FOUND
-                if (user == null) return Unauthorized("Username not registered.");
+                /// GET user data
+                User user = _users.Find(x => x.USERNAME == pin.USERNAME);
 
                 /// SET user to pin model for validation
                 pin.user = user;
 
                 /// Validation for PIN
-                validationMessage = pin.PinValidation();
+                validationMessage = ValidatePIN(pin);
 
+                /// If validate blank do
                 if (validationMessage == "")
                 {
                     /// VALIDATE pin if empty or null then return false other than that true
-                    if (user.PIN == "") pinStatus = "false";
-                    else if (user.PIN == null) pinStatus = "false";
+                    if (pin.user.PIN == "") pinStatus = "false";
+                    else if (pin.user.PIN == null) pinStatus = "false";
                     else pinStatus = "true";
 
                     return Ok(pinStatus);
