@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Bank.Core.Entity
+namespace Bank.Core.Entity.ChangeData
 {
     public class ChangeAddress
     {
