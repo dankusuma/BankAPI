@@ -4,9 +4,7 @@ using Bank.Core.Interface;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Bank.Api.Controllers
 {
@@ -26,7 +24,6 @@ namespace Bank.Api.Controllers
         [HttpPatch]
         public IActionResult ChangeAddress(ChangeAddress add)
         {
-            string response = "";
             try
             {
                 User user = _users.Find(x => x.USERNAME == add.USERNAME);
@@ -45,6 +42,32 @@ namespace Bank.Api.Controllers
                 if (add.IsAddressValid())
                 {
                     _repository.Update(user);
+                }
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+
+            return Ok("Success");
+        }
+
+        [HttpPatch]
+        public IActionResult ChangeJob(ChangeJob job)
+        {
+            string response = "";
+            try
+            {
+                User user = _users.Find(x => x.USERNAME == job.USERNAME);
+
+                if (user == null)
+                {
+                    return NotFound("User not found");
+                }
+
+                if (job.IsJobValid())
+                {
+                    _repository.Update(user);
                     response = JsonSerializer.Serialize<User>(user);
                 }
             }
@@ -53,7 +76,7 @@ namespace Bank.Api.Controllers
                 return BadRequest(e.Message);
             }
 
-            return Ok(response);
+            return Ok("Success");
         }
     }
 }
