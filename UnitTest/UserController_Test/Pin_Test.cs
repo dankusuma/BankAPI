@@ -29,6 +29,9 @@ namespace UnitTest.UserController_Test
             _config = A.Fake<IConfiguration>();
             _repo = A.Fake<IRepository>();
 
+            A.CallTo(() => _repo.List<User>(null)).Returns(GetDummyUser());
+            A.CallTo(() => _repo.List<RefMaster>(null)).Returns(GetRefMasters());
+
             controller = new UserController(_repo, _config);
 
             /// Set User List
@@ -72,101 +75,64 @@ namespace UnitTest.UserController_Test
             };
         }
 
-        [TestCase("200", "dummyUser")]  // PIN created successfully
-        [TestCase("401", "dummyUserX")] // Username not registered.
-        public void CreatePINTest(string resultCode, string param1)
+        [TestCase("dummyPINTrue", "PIN created successfully. Please re-login")]  // PIN change successfully
+        [TestCase("dummyUserX", "Username not registered.")] // Username not registered.
+        public void CreatePINTest(string param, string expected)
         {
             #region Set Up Param
-            var resultValue = "";
             /// Set Pin
             var pin = _pin;
-            pin.USERNAME = param1;
+            pin.USERNAME = param;
             pin.mode = "create";
-
-            /// Add list user
-            A.CallTo(() => _repo.List<User>(null)).Returns(GetDummyUser());
             #endregion
 
-            var result = controller.CreatePIN(_pin);
+            var res = controller.CreatePIN(_pin) as ObjectResult;
 
-            if (resultCode == "401")
-            {
-                var x = result as UnauthorizedObjectResult;
-                resultValue = x.StatusCode.ToString();
-            }
-            else if (resultCode == "200")
-            {
-                var x = result as OkObjectResult;
-                resultValue = x.StatusCode.ToString();
-            }
+            string result = res.Value.ToString();
 
-            Assert.AreEqual(resultCode, resultValue);
+            Assert.AreEqual(result, expected);
         }
 
-        [TestCase("200", "dummyUser")]  // PIN created successfully
-        [TestCase("401", "dummyUserX")] // Username not registered.
-        public void ChangePINTest(string resultCode, string param1)
+        [TestCase("dummyPINTrue", "PIN updated successfully")]  // PIN change successfully
+        [TestCase("dummyUserX", "Username not registered.")] // Username not registered.
+        public void ChangePINTest(string param, string expected)
         {
             #region Set Up Param
-            var resultValue = "";
             /// Set Pin
             var pin = _pin;
-            pin.USERNAME = param1;
+            pin.USERNAME = param;
             pin.mode = "create";
-
-            /// Add list user
-            A.CallTo(() => _repo.List<User>(null)).Returns(GetDummyUser());
-            A.CallTo(() => _repo.List<RefMaster>(null)).Returns(GetRefMasters());
             #endregion
 
-            var result = controller.ChangePIN(_pin);
+            var res = controller.ChangePIN(_pin) as ObjectResult;
 
-            if (resultCode == "401")
-            {
-                var x = result as UnauthorizedObjectResult;
-                resultValue = x.StatusCode.ToString();
-            }
-            else if (resultCode == "200")
-            {
-                var x = result as OkObjectResult;
-                resultValue = x.StatusCode.ToString();
-            }
+            string result = res.Value.ToString();
 
-            Assert.AreEqual(resultCode, resultValue);
+            Assert.AreEqual(result, expected);
         }
 
-        [TestCase("200", "dummyUser")]  // PIN created successfully
-        [TestCase("401", "dummyUserX")] // Username not registered.
-        public void PINStatus(string resultCode, string param1)
+        [TestCase("dummyPINTrue", "true")]  // true (PIN Exists)
+        [TestCase("dummyPINFalse", "false")]  // false (PIN empty)
+        [TestCase("dummyPINFalseNull", "false")]  // false (PIN null)
+        [TestCase("dummyUserX", "Username not registered.")] // Username not registered.
+        public void PINStatus(string param, string expected)
         {
+
             #region Set Up Param
-            var resultValue = "";
             /// Set Pin
             var pin = _pin;
-            pin.USERNAME = param1;
+            pin.USERNAME = param;
             pin.mode = "status";
-
-            /// Add list user
-            A.CallTo(() => _repo.List<User>(null)).Returns(GetDummyUser());
             #endregion
 
-            var result = controller.PINStatus(_pin);
+            var res = controller.PINStatus(_pin) as ObjectResult;
 
-            if (resultCode == "401")
-            {
-                var x = result as UnauthorizedObjectResult;
-                resultValue = x.StatusCode.ToString();
-            }
-            else if (resultCode == "200")
-            {
-                var x = result as OkObjectResult;
-                resultValue = x.StatusCode.ToString();
-            }
+            string result = res.Value.ToString();
 
-            Assert.AreEqual(resultCode, resultValue);
+            Assert.AreEqual(result, expected);
         }
 
-        [TestCase("create", "", "080389")]
+        [TestCase("create", null, "080389")]
         [TestCase("create", "Invalid pin", null)]
         [TestCase("create", "Invalid input. Only accept 6 digit numbers", "")]
         [TestCase("create", "Only accept 6 digit numbers", "12345y")]
@@ -177,7 +143,7 @@ namespace UnitTest.UserController_Test
         [TestCase("create", "Please DO NOT use \"123456\" or \"654321\" and the other general number as your pin", "123456")]
         [TestCase("create", "Please DO NOT use \"123456\" or \"654321\" and the other general number as your pin", "654321")]
         [TestCase("change", "New pin must be different from the old one.", "624351")]
-        [TestCase("change", "", "065314")]
+        [TestCase("change", null, "065314")]
         [TestCase("change", "Invalid pin", null)]
         [TestCase("change", "Invalid input. Only accept 6 digit numbers", "")]
         [TestCase("change", "Only accept 6 digit numbers", "12345y")]
@@ -198,7 +164,12 @@ namespace UnitTest.UserController_Test
             A.CallTo(() => _repo.List<RefMaster>(null)).Returns(GetRefMasters());
             A.CallTo(() => _repo.List<User>(null)).Returns(GetDummyUser());
             // ACT
-            var result = controller.ValidatePIN(_pin);
+            var res = controller.ValidatePIN(_pin);
+
+            string result = "";
+            if (res == null) result = null;
+            else result = res.Value.ToString();
+
             // ASSERT
             Assert.AreEqual(result, expected);
         }
@@ -320,7 +291,8 @@ namespace UnitTest.UserController_Test
                     BIRTH_DATE = new DateTime(2000, 03, 13) // 2000-03-13 00:00:00.000
                 },
                 new User{
-                    USERNAME = "dummyUser1",
+                    USERNAME = "dummyPINTrue",
+                    PIN = "065314",
                     NAME = "DUMMY KEDUA KAKA",
                     PASSWORD = "DUMMY_DUMMY",
                     MOTHER_MAIDEN_NAME = "MaidenName",
@@ -341,7 +313,7 @@ namespace UnitTest.UserController_Test
                     USER_TYPE = "user"
                 },
                 new User{
-                    USERNAME = "dummyUser2",
+                    USERNAME = "dummyPINFalse",
                     NAME = "DUMMY KETIGA",
                     PASSWORD = "DUMMY_DUMMY",
                     MOTHER_MAIDEN_NAME = "MaidenName",
@@ -359,7 +331,30 @@ namespace UnitTest.UserController_Test
                     MARITAL_STATUS = "Lajang",
                     FOTO_KTP_SELFIE = "DUMMY KTP LINK",
                     VIDEO = "DUMMY VIDEO LINK",
-                    USER_TYPE = "user"
+                    USER_TYPE = "user",
+                    PIN = ""
+                },
+                new User{
+                    USERNAME = "dummyPINFalseNull",
+                    NAME = "DUMMY KETIGA",
+                    PASSWORD = "DUMMY_DUMMY",
+                    MOTHER_MAIDEN_NAME = "MaidenName",
+                    ADDRESS = "DUMMY ADDRESS",
+                    KELURAHAN = "DUMMY LURAH",
+                    KECAMATAN="DUMMY KECAMATAN",
+                    KABUPATEN_KOTA = "DUMMY KOTA",
+                    PROVINCE = "DUMMY PROVINCE",
+                    BIRTH_PLACE = "DUMMY CITY",
+                    EMAIL = "dummy3@dummy.com",
+                    GENDER = 'M',
+                    JOB = "PNS",
+                    PHONE = "08123456789",
+                    NIK = "1234567891012131",
+                    MARITAL_STATUS = "Lajang",
+                    FOTO_KTP_SELFIE = "DUMMY KTP LINK",
+                    VIDEO = "DUMMY VIDEO LINK",
+                    USER_TYPE = "user",
+                    PIN = null
                 },
         };
             return dummy;

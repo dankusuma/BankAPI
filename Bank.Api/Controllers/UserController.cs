@@ -3,6 +3,7 @@ using Bank.Core;
 using Bank.Core.Entity;
 using Bank.Core.Interface;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -370,47 +371,50 @@ namespace Bank.Api.Controllers
             else return "";
         }
 
+        private ObjectResult ValidateChangePassword(ChangePassword changePassword, User user)
+        {
+            if (user == null) return Unauthorized("Username not registered");
+            //if (string.IsNullOrEmpty(changePassword.USERNAME)) return BadRequest("Please provide username");
+            if (string.IsNullOrEmpty(changePassword.PASSWORD)) return BadRequest("Please provide new password");
+
+            if (changePassword.MODE == "create")
+            {
+                int yrs = int.Parse(user.CHANGE_PASSWORD_TOKEN_EXPIRATION.Substring(0, 4));
+                int mon = int.Parse(user.CHANGE_PASSWORD_TOKEN_EXPIRATION.Substring(4, 2));
+                int day = int.Parse(user.CHANGE_PASSWORD_TOKEN_EXPIRATION.Substring(6, 2));
+                int hrs = int.Parse(user.CHANGE_PASSWORD_TOKEN_EXPIRATION.Substring(8, 2));
+                int mnt = int.Parse(user.CHANGE_PASSWORD_TOKEN_EXPIRATION.Substring(10, 2));
+                DateTime dt = new DateTime(yrs, mon, day, hrs, mnt, 0);
+
+                if (DateTime.Now > dt) return Unauthorized("Token expired");
+                if (changePassword.TOKEN != user.CHANGE_PASSWORD_TOKEN)
+                    return Unauthorized($"Invalid token.\nUserToken:{user.CHANGE_PASSWORD_TOKEN}, new token: {changePassword.TOKEN}");
+
+                if (user.VerifyPassword(changePassword.PASSWORD) == true) return Unauthorized("New password must be different from the old one.");
+
+            }
+            else
+            {
+                string newHash = user.HashValue(changePassword.PASSWORD);
+                if (user.PASSWORD == newHash) return BadRequest("New password must be different from the old one.");
+            }
+
+            return null;
+        }
+
         [HttpPost]
         public IActionResult ChangePassword(ChangePassword changePassword)
         {
-            string validationMessage = "";
-
             try
             {
-                #region Validation
-                if (changePassword == null)
-                {
-                    validationMessage = "Please provide complete data";
-                }
-                else if (string.IsNullOrEmpty(changePassword.USERNAME))
-                {
-                    validationMessage = "Please provide username";
-                }
-                else if (string.IsNullOrEmpty(changePassword.PASSWORD) || string.IsNullOrEmpty(changePassword.NEW_PASSWORD))
-                {
-                    validationMessage = "Please provide new password";
-                }
-
                 /// Get OLD password using USERNAME
-                User user = _repository.List<User>(null).Find(x => x.USERNAME == changePassword.USERNAME);
+                User user = _users.Find(x => x.USERNAME == changePassword.USERNAME);
 
-                if (user == null)
-                {
-                    validationMessage = "Username not registered";
-                }
-                else if (user.CHANGE_PASSWORD_TOKEN != changePassword.TOKEN && changePassword.MODE == "create")
-                {
-                    validationMessage = $"Invalid token.\nUserToken:{user.CHANGE_PASSWORD_TOKEN}, new token: {changePassword.TOKEN}";
-                }
-                else if (user.VerifyPassword(changePassword.NEW_PASSWORD) == true)
-                {
-                    validationMessage = "New password must be different from the old one.";
-                }
-                #endregion
+                var validationMessage = ValidateChangePassword(changePassword, user);
 
-                if (validationMessage == "")
+                if (validationMessage == null)
                 {
-                    user.PASSWORD = changePassword.NEW_PASSWORD;
+                    user.PASSWORD = changePassword.PASSWORD;
                     user.HashPassword();
 
                     /// Update user
@@ -420,80 +424,66 @@ namespace Bank.Api.Controllers
                 }
                 else
                 {
-                    throw new InvalidDataException(validationMessage);
+                    return validationMessage;
                 }
             }
             catch (Exception ex)
             {
-                throw new InvalidDataException(ex.Message.ToString());
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message.ToString());
             }
         }
 
         [NonAction]
-        public string ValidatePIN(Pin pin)
+        public ObjectResult ValidatePIN(Pin pin)
         {
-            #region ARRANGE
-            /// Check the mode if create then use a PIN if change then use NEW_PIN
+            /// VALIDATE USER
+            if (pin.user == null) return Unauthorized("Username not registered.");
+
+            /// If the mode equals "status" then return to
+            if (pin.mode == "status")
+            {
+                return null;
+            }
+
+            /// IF MODE EQUAL CREATE OR CHANGE
+
+            /// Set the values according to the mode. if create then use a PIN in addition to using PIN_NEW
             string value = pin.mode == "create" ? pin.PIN : pin.NEW_PIN;
 
-            /// Get list of validation from REFF_MASTER
-            var validationList = _refMasters.FindAll(x => x.MASTER_GROUP == "PIN");
-
-            /// Get list for FORMAT check based from validationList
-            var formatVal = validationList.Where(x => x.MASTER_CODE == "FORMAT").ToList();
-
-            // Get PIN Length SETTING
-            int len = int.Parse(validationList.Where(x => x.MASTER_CODE == "LENGTH").SingleOrDefault().VALUE);
-            #endregion
-
-            #region Validate
-            /// RETURN Unauthorized when username NOT FOUND
-            if (pin.user == null) return "Username not registered.";
-
-            /// If mode equal status just return empty
-            if (pin.mode == "status") return "";
+            /// Get a pin validation list from the master reff table
+            var validationList = _refMasters.Where(x => x.MASTER_GROUP == "PIN");
 
             /// Find values into the validation list if it is not found it will return null
-            var reffList = validationList.FindAll(x => x.MASTER_CODE != "FORMAT" && x.VALUE == value).SingleOrDefault();
+            var errorMessage = validationList.Where(x => x.MASTER_CODE != "FORMAT" && x.VALUE == value).SingleOrDefault();
 
             /// If the data is returned null then the process will continue but if it is not null then the result will be returned
-            if (reffList != null) return reffList.MASTER_CODE_DESCRIPTION;
+            if (errorMessage != null) return BadRequest(errorMessage.MASTER_CODE_DESCRIPTION);
 
-            if (value.Length < len) return "Pin too short. Only accept 6 digit numbers";
-            if (value.Length > len) return "Pin too long. Only accept 6 digit numbers";
+            // LENGTH VALIDATION 
+            int len = int.Parse(validationList.Where(x => x.MASTER_CODE == "LENGTH").SingleOrDefault().VALUE);
 
-            if (!value.All(char.IsNumber)) return "Only accept 6 digit numbers";
+            if (value.Length < len) return BadRequest("Pin too short. Only accept 6 digit numbers");
+            if (value.Length > len) return BadRequest("Pin too long. Only accept 6 digit numbers");
 
-            if (pin.mode == "create")
-            {
-                pin.user.PIN = pin.HashPIN(pin.PIN);
-            }
+            /// NUMBER ONLY VALIDATION
+            if (!value.All(char.IsNumber)) return BadRequest("Only accept 6 digit numbers");
+
             /// For change mode there is 1 additional validation that checks whether NEW_PIN equals PIN
-            else if (pin.mode == "change")
+            if (pin.mode == "change")
             {
-                string newPin = pin.HashPIN(pin.NEW_PIN);
-                if (pin.user.PIN == newPin)
-                {
-                    return "New pin must be different from the old one.";
-                }
-                else
-                {
-                    pin.user.PIN = newPin;
-                }
+                if (pin.user.PIN == pin.HashPIN(pin.NEW_PIN)) return BadRequest("New pin must be different from the old one.");
             }
+
+            /// Get list for FORMAT VALIDATION
+            var formatVal = validationList.Where(x => x.MASTER_CODE == "FORMAT").ToList();
 
             foreach (var item in formatVal)
             {
                 string dt = pin.user.BIRTH_DATE.ToString(item.VALUE);
-                if (value == dt) return item.MASTER_CODE_DESCRIPTION;
+                if (value == dt) return BadRequest(item.MASTER_CODE_DESCRIPTION);
             }
-            #endregion
 
-            /// Validate format
-            #region Validate Format
-            #endregion
-
-            return "";
+            return null;
         }
 
         [HttpPost]
@@ -510,9 +500,9 @@ namespace Bank.Api.Controllers
                 pin.user = user;
 
                 /// Validation for PIN
-                string validationMessage = ValidatePIN(pin);
+                var validationResult = ValidatePIN(pin);
 
-                if (validationMessage == "")
+                if (validationResult == null)
                 {
                     /// IF no error found CREATE pin hash
                     pin.user.PIN = pin.HashPIN(pin.PIN);
@@ -524,7 +514,7 @@ namespace Bank.Api.Controllers
                 }
                 else
                 {
-                    return BadRequest(validationMessage);
+                    return validationResult;
                 }
             }
             catch (Exception ex)
@@ -547,18 +537,20 @@ namespace Bank.Api.Controllers
                 pin.user = user;
 
                 /// Validation for PIN
-                string validationMessage = ValidatePIN(pin);
+                var validationResult = ValidatePIN(pin);
 
-                if (validationMessage == "")
+                if (validationResult == null)
                 {
+                    /// IF no error found CREATE pin hash
+                    pin.user.PIN = pin.HashPIN(pin.NEW_PIN);
                     /// Update user
                     _repository.Update(pin.user);
 
-                    return Ok("Password updated successfully");
+                    return Ok("PIN updated successfully");
                 }
                 else
                 {
-                    return BadRequest(validationMessage);
+                    return validationResult;
                 }
             }
             catch (Exception ex)
@@ -570,7 +562,6 @@ namespace Bank.Api.Controllers
         [HttpPost]
         public IActionResult PINStatus(Pin pin)
         {
-            string validationMessage = "";
             string pinStatus = "false";
             pin.mode = "status";
 
@@ -583,10 +574,10 @@ namespace Bank.Api.Controllers
                 pin.user = user;
 
                 /// Validation for PIN
-                validationMessage = ValidatePIN(pin);
+                var validationResult = ValidatePIN(pin);
 
                 /// If validate blank do
-                if (validationMessage == "")
+                if (validationResult == null)
                 {
                     /// VALIDATE pin if empty or null then return false other than that true
                     if (pin.user.PIN == "") pinStatus = "false";
@@ -597,7 +588,7 @@ namespace Bank.Api.Controllers
                 }
                 else
                 {
-                    return BadRequest(validationMessage);
+                    return validationResult;
                 }
             }
             catch (Exception ex)
