@@ -60,6 +60,8 @@ namespace Bank.Api.Controllers
             {
                 User user = _users.Find(x => x.USERNAME == job.USERNAME);
 
+                user.JOB = job.JOB;
+
                 if (user == null)
                 {
                     return NotFound("User not found");
