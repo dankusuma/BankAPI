@@ -2,7 +2,7 @@
 
 namespace Bank.Core.Entity
 {
-    public class ForgotPasswordModel
+    public class ForgotPassword
     {
         private string _email;
         private bool _isValid = false;

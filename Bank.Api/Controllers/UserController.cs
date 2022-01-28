@@ -359,7 +359,7 @@ namespace Bank.Api.Controllers
         public string IsEmailValid(ForgotPassword forgotPassword)
         {
             if (forgotPassword.EMAIL == "") return "Can't fill in an empty email";
-            else if (!forgotPassword.ValidateEmail()) return "Incorrect email format";
+            //else if (!forgotPassword.ValidateEmail()) return "Incorrect email format";
             else return "";
         }
 
