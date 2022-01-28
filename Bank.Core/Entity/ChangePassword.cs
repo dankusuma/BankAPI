@@ -41,14 +41,17 @@ namespace Bank.Core.Entity
         {
             set
             {
-                int yrs = int.Parse(value.Substring(0, 4));
-                int mon = int.Parse(value.Substring(4, 2));
-                int day = int.Parse(value.Substring(6, 2));
-                int hrs = int.Parse(value.Substring(8, 2));
-                int mnt = int.Parse(value.Substring(10, 2));
-                DateTime dt = new DateTime(yrs, mon, day, hrs, mnt, 0);
-                if (DateTime.Now > dt) _isExpired = true;
-                else _isExpired = false;
+                if (MODE == "forget")
+                {
+                    int yrs = int.Parse(value.Substring(0, 4));
+                    int mon = int.Parse(value.Substring(4, 2));
+                    int day = int.Parse(value.Substring(6, 2));
+                    int hrs = int.Parse(value.Substring(8, 2));
+                    int mnt = int.Parse(value.Substring(10, 2));
+                    DateTime dt = new DateTime(yrs, mon, day, hrs, mnt, 0);
+                    if (DateTime.Now > dt) _isExpired = true;
+                    else _isExpired = false;
+                }
             }
         }
         public bool IS_TOKEN_EXPIRED
