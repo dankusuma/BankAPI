@@ -596,5 +596,20 @@ namespace Bank.Api.Controllers
                 return BadRequest(ex.Message.ToString());
             }
         }
+
+        [HttpPost]
+        public IActionResult TriggerActiveFlag(User user)
+        {
+            if(_repository.List<User>(null).Exists(x => x.ID == user.ID))
+            {
+                user.IS_ACTIVE = true;
+                _repository.Update(user);
+                return Ok();
+            }
+            else
+            {
+                return NotFound("User not exist!");
+            }
+        }
     }
 }

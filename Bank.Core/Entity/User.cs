@@ -20,6 +20,7 @@ namespace Bank.Core.Entity
         public string FOTO_KTP_SELFIE { get; set; }
         public string VIDEO { get; set; }
         public bool IS_VALIDATE { get; set; }
+        public bool IS_ACTIVE { get; set; }
         public DateTime LOGIN_HOLD { get; set; }
         public int LOGIN_FAILED { get; set; }
         public string USER_TYPE { get; set; }
