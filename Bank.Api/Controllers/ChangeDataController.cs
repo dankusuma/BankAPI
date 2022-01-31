@@ -21,7 +21,7 @@ namespace Bank.Api.Controllers
             _users = _repository.List<User>(null);
         }
 
-        [HttpPatch]
+        [HttpPost]
         public IActionResult ChangeAddress(ChangeAddress add)
         {
             try
@@ -52,7 +52,7 @@ namespace Bank.Api.Controllers
             return Ok("Success");
         }
 
-        [HttpPatch]
+        [HttpPost]
         public IActionResult ChangeJob(ChangeJob job)
         {
             string response = "";
