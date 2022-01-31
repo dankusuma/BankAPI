@@ -240,6 +240,8 @@ namespace Bank.Api.Controllers
             var claims = new List<Claim>();
             claims.Add(new Claim(ClaimTypes.Role, user.USER_TYPE.ToString()));
             claims.Add(new Claim(ClaimTypes.Name, user.USERNAME));
+            claims.Add(new Claim("is_active", user.IS_ACTIVE? "true" : "false"));
+            claims.Add(new Claim("is_auth", user.IS_VALIDATE? "true" : "false"));
             claims.Add(new Claim("pin_status", pinStatus));
 
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
