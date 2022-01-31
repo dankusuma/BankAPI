@@ -32,27 +32,35 @@ namespace Bank.Api.Controllers
 
         private ObjectResult ForgotPasswordValidation(ForgotPassword forgotPassword, User user)
         {
-            if (user == null) return Unauthorized("Username not registered.");
-            else forgotPassword.EMAIL = user.EMAIL;
+            if (!forgotPassword.IS_EMAIL_VALID)
+            {
+                return Unauthorized("Incorrect email format.");
+            }
 
-            if (!forgotPassword.IS_EMAIL_VALID) return Unauthorized("Incorrect email format");
+            if (user == null)
+            {
+                return Unauthorized("Email not registered.");
+            }
 
             return null;
         }
 
         private ObjectResult ChangePasswordValidation(string mode, ChangePassword changePassword, User user)
         {
-            if (user == null) return Unauthorized("Username not registered");
+            if (user == null)
+            {
+                return Unauthorized("Username not registered.");
+            }
 
             if (mode == "forget")
             {
                 if (changePassword.IS_TOKEN_EXPIRED)
                 {
-                    return Unauthorized("Token expired");
+                    return Unauthorized("Token expired.");
                 }
                 if (changePassword.TOKEN != user.CHANGE_PASSWORD_TOKEN)
                 {
-                    return Unauthorized($"Invalid token.\nUserToken:{user.CHANGE_PASSWORD_TOKEN}, new token: {changePassword.TOKEN}");
+                    return Unauthorized("Invalid token.");
                 }
             }
 
@@ -69,13 +77,15 @@ namespace Bank.Api.Controllers
         {
             try
             {
-                var user = _users.Where(x => x.EMAIL == forgotPassword.EMAIL).SingleOrDefault();
+                var mail = _users.Where(x => x.EMAIL == forgotPassword.EMAIL).SingleOrDefault();
 
-                var validateMessage = ForgotPasswordValidation(forgotPassword, user);
+                var validateMessage = ForgotPasswordValidation(forgotPassword, mail);
 
                 if (validateMessage == null)
                 {
-                    return SendEmail(user, forgotPassword.EMAIL);
+                    forgotPassword.EMAIL = mail.EMAIL;
+
+                    return SendEmail(mail, forgotPassword.EMAIL);
                 }
                 else
                 {
@@ -107,7 +117,7 @@ namespace Bank.Api.Controllers
                     /// Update user
                     _repo.Update(user);
 
-                    return Ok("Password updated successfully");
+                    return Ok("Password updated successfully.");
                 }
                 else
                 {
@@ -145,7 +155,7 @@ namespace Bank.Api.Controllers
             string MailText = "";
 
             templatePath = Directory.GetCurrentDirectory() + mailBodyTemplatePath;
-            StreamReader str = new StreamReader(templatePath);
+            StreamReader str = new(templatePath);
             MailText = str.ReadToEnd();
             str.Close();
 
@@ -191,7 +201,7 @@ namespace Bank.Api.Controllers
             client.Disconnect(true);
             #endregion
 
-            return Ok(string.Format("Email sent to {0} successfully", email));
+            return Ok(string.Format("Email sent to {0} successfully.", email));
         }
     }
 }
