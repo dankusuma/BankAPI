@@ -5,6 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="UserController_Test\ForgotPassword_Test.cs" />
+    <Compile Remove="UserController_Test\Password_Test.cs" />
+    <Compile Remove="UserController_Test\Pin_Test.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FakeItEasy" Version="7.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
     <PackageReference Include="NUnit" Version="3.13.2" />
