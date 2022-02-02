@@ -46,8 +46,6 @@ namespace Bank.Core.Entity
             byte[] videoBytes = Convert.FromBase64String(stringVideo);
             MemoryStream msVideo = new MemoryStream(videoBytes);
             uploadedVideo = new FormFile(msVideo, 0, videoBytes.Length, videoName, videoName);
-
-
         }
 
         public void doUpload(string maxPictureSize, string maxVideoSize)
@@ -56,9 +54,8 @@ namespace Bank.Core.Entity
             int maxVideoSizenumber = Convert.ToInt32(maxVideoSize);
             try
             {
-
-                string statusFoto = doUpload(uploadedPhoto, new[] { ".jpg", ".png", ".bmp" }, photoName);
-                string statusVideo = doUpload(uploadedVideo, new[] { ".mp4", ".avi", ".mpg" }, videoName);
+                string statusFoto = doUpload(uploadedPhoto, new[] { ".jpg", ".png", ".bmp", ".jpeg" }, photoName, maxPictureSizenumber);
+                string statusVideo = doUpload(uploadedVideo, new[] { ".mp4", ".avi", ".mpg" }, videoName, maxVideoSizenumber);
                 if (statusFoto != "Success!")
                 {
                     status = statusFoto;
@@ -94,7 +91,6 @@ namespace Bank.Core.Entity
             {
                 return "File Kebesaran";
             }
-
             else
             {
                 string fileName = file.FileName;
@@ -115,10 +111,9 @@ namespace Bank.Core.Entity
                     return true;
                 }
             }
+
             return false;
         }
-
     }
-
 }
 

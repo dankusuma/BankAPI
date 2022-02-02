@@ -35,7 +35,7 @@ namespace Bank.Api.Controllers
         public IActionResult Get()
         {
             List<RoleType> roleTypes = new List<RoleType>();
-            roleTypes = _repository.List<RoleType>();
+            roleTypes = _repository.List<RoleType>(null);
             return Ok(roleTypes);
         }
 

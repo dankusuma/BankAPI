@@ -8,8 +8,8 @@ namespace Bank.Core.Entity
 {
     public class RoleType : BaseEntity
     {
-        public string role { get; set; }
-        public string description { get; set; }
+        public string ROLE { get; set; }
+        public string DESCRIPTION { get; set; }
     }
 
 
