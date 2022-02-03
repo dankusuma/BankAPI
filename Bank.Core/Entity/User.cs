@@ -37,6 +37,7 @@ namespace Bank.Core.Entity
         public string NIK { get; set; } //
         public string CHANGE_PASSWORD_TOKEN { get; set; }
         public string CHANGE_PASSWORD_TOKEN_EXPIRATION { get; set; }
+        public bool IS_ACTIVE { get; set; }
 
 
         public string dataValidation()
@@ -66,12 +67,12 @@ namespace Bank.Core.Entity
             {
                 throw new ArgumentException("KTP link is not valid!");
             }
-            if (string.IsNullOrEmpty(VIDEO) ||  VIDEO.Length > 125)
+            if (string.IsNullOrEmpty(VIDEO) || VIDEO.Length > 125)
             {
                 throw new ArgumentException("VIDEO link is not valid!");
             }
             if (string.IsNullOrEmpty(USER_TYPE) || USER_TYPE.Length > 20)
-            { 
+            {
                 throw new ArgumentException("user role is not valid!");
             }
             if (!NIK.All(char.IsDigit) || NIK.Length != 16)
