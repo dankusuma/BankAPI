@@ -3,6 +3,7 @@ using Bank.Core;
 using Bank.Core.Entity;
 using Bank.Core.Interface;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -256,6 +257,49 @@ namespace Bank.Api.Controllers
             _repository.Update(user);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        [HttpGet]
+        public UserViewModel GetUserStatus(string username)
+        {
+            User usr = _users.Where(x => x.USERNAME == username).SingleOrDefault();
+
+            return new UserViewModel
+            {
+                Username = usr.USERNAME,
+                PinStatus = string.IsNullOrEmpty(usr.PIN) ? false : true,
+                IsValidate = usr.IS_VALIDATE,
+                IsActive = usr.IS_ACTIVE,
+            };
+        }
+
+        [HttpPatch]
+        public IActionResult UpdateIsActive(string username)
+        {
+            try
+            {
+                var user = _users.Where(x => x.USERNAME == username).SingleOrDefault();
+
+                ObjectResult validateMessage = null;
+
+                if (user == null) validateMessage = Unauthorized("");
+
+                if (validateMessage == null)
+                {
+                    /// UPDATE data to user
+                    _repository.Update(user);
+
+                    return Ok("");
+                }
+                else
+                {
+                    return validateMessage;
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message.ToString());
+            }
         }
     }
 }
